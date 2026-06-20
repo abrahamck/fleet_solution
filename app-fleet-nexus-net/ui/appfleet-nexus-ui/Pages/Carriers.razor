@@ -111,7 +111,7 @@
             error = false;
             errorMessage = string.Empty;
 
-            var response = await Http.GetAsync("http://localhost:5067/api/carriers/top");
+            var response = await Http.GetAsync("api/carriers/top");
             
             if (response.IsSuccessStatusCode)
             {
