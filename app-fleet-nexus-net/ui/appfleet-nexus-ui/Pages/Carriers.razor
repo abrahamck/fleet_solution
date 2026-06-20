@@ -1,0 +1,153 @@
+@page "/carriers"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Top Carriers - FleetNexus</PageTitle>
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5 fw-bold">Top Carriers</h1>
+            <p class="lead text-muted">View the top 10 carriers by number of power units</p>
+        </div>
+        <div class="col-auto">
+            <a href="/" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="alert alert-info" role="alert">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            Loading carriers data...
+        </div>
+    }
+    else if (error)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> Failed to load carriers data: @errorMessage
+            <button type="button" class="btn-close" @onclick="ReloadData"></button>
+        </div>
+        <button class="btn btn-primary" @onclick="ReloadData">
+            <i class="bi bi-arrow-clockwise"></i> Try Again
+        </button>
+    }
+    else if (carriers != null && carriers.Count > 0)
+    {
+        <div class="row mb-3">
+            <div class="col">
+                <span class="badge bg-primary">Total: @carriers.Count carriers</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">
+                            <i class="bi bi-hash"></i> DOT Number
+                        </th>
+                        <th scope="col">
+                            <i class="bi bi-building"></i> Legal Name
+                        </th>
+                        <th scope="col">
+                            <i class="bi bi-geo-alt"></i> City
+                        </th>
+                        <th scope="col">
+                            <i class="bi bi-map"></i> State
+                        </th>
+                        <th scope="col text-end">
+                            <i class="bi bi-truck"></i> Power Units
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var carrier in carriers)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@carrier.DotNumber</strong>
+                            </td>
+                            <td>@(carrier.LegalName ?? string.Empty)</td>
+                            <td>@(carrier.City ?? string.Empty)</td>
+                            <td>@(carrier.State ?? string.Empty)</td>
+                            <td class="text-end">
+                                <span class="badge bg-success">@(carrier.NumberOfPowerUnits ?? 0)</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (!loading && !error)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> No carriers found.
+        </div>
+    }
+</div>
+
+@code {
+    private List<CarrierDto>? carriers;
+    private bool loading = true;
+    private bool error = false;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadData();
+    }
+
+    private async Task ReloadData()
+    {
+        try
+        {
+            loading = true;
+            error = false;
+            errorMessage = string.Empty;
+
+            var response = await Http.GetAsync("http://localhost:5067/api/carriers/top");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                carriers = result?.Data ?? new List<CarrierDto>();
+            }
+            else
+            {
+                error = true;
+                errorMessage = $"HTTP {response.StatusCode}: {response.ReasonPhrase}";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = true;
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    public class ApiResponse
+    {
+        public bool Success { get; set; }
+        public int Count { get; set; }
+        public List<CarrierDto> Data { get; set; } = new();
+    }
+
+    public class CarrierDto
+    {
+        public long DotNumber { get; set; }
+        public string? LegalName { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public int? NumberOfPowerUnits { get; set; }
+    }
+}
