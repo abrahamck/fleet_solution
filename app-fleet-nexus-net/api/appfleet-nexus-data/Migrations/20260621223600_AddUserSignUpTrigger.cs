@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace AppFleetNexus.Data.Migrations
 {
-    [Migration("20260621223600_AddUserSignUpTrigger")]
     public partial class AddUserSignUpTrigger : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
