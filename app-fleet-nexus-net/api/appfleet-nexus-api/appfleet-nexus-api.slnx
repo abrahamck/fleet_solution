@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="../appfleet-nexus-data/appfleet-nexus-data.csproj" />
+  <Project Path="../appfleet-nexus-security/appfleet-nexus-security.csproj" />
   <Project Path="appfleet-nexus-api.csproj" />
 </Solution>

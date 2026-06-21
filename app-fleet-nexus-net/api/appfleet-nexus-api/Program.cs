@@ -50,6 +50,13 @@ try
 
     var app = builder.Build();
 
+    // Automatically apply pending EF Core Migrations on startup
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<FleetNexusDbContext>();
+        db.Database.Migrate();
+    }
+
     // Configure the HTTP request pipeline
     if (app.Environment.IsDevelopment())
     {
@@ -63,7 +70,7 @@ try
 
     app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex.GetType().Name is not "HostAbortedException")
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
 }
