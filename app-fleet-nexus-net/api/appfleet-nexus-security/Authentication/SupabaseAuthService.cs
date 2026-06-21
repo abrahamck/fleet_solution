@@ -24,11 +24,15 @@ public class SupabaseAuthService : ISupabaseAuthService
         _options = options.Value;
         this._logger = _logger;
 
-        // Normalize URL: remove trailing slashes and any trailing /auth/v1 if misconfigured
+        // Normalize URL: remove trailing slashes and any trailing /auth/v1 or /rest/v1 if misconfigured
         string baseUrl = _options.Url.TrimEnd('/');
         if (baseUrl.EndsWith("/auth/v1", StringComparison.OrdinalIgnoreCase))
         {
             baseUrl = baseUrl.Substring(0, baseUrl.Length - "/auth/v1".Length).TrimEnd('/');
+        }
+        else if (baseUrl.EndsWith("/rest/v1", StringComparison.OrdinalIgnoreCase))
+        {
+            baseUrl = baseUrl.Substring(0, baseUrl.Length - "/rest/v1".Length).TrimEnd('/');
         }
 
         _httpClient.BaseAddress = new Uri(baseUrl + "/");
