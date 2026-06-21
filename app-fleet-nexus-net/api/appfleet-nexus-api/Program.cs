@@ -1,7 +1,7 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
-using appfleet_nexus_data.Data;
-using appfleet_nexus_data.Repositories;
+using AppFleetNexus.Data.Data;
+using AppFleetNexus.Data.Repositories;
 using AppFleetNexus.Security.Extensions;
 
 // Configure Serilog logging

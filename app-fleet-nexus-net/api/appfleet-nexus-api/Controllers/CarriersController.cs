@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using appfleet_nexus_data.Repositories;
+using AppFleetNexus.Data.Repositories;
 
-namespace appfleet_nexus_api.Controllers;
+namespace AppFleetNexus.Api.Controllers;
 
+[AllowAnonymous]
 [ApiController]
 [Route("api/carriers")]
 public class CarriersController : ControllerBase

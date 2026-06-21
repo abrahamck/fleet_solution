@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using appfleet_nexus_data.Data;
-using appfleet_nexus_data.Models;
+using AppFleetNexus.Data.Data;
+using AppFleetNexus.Data.Models;
 
-namespace appfleet_nexus_data.Repositories;
+namespace AppFleetNexus.Data.Repositories;
 
 public class CarrierRepository : ICarrierRepository
 {

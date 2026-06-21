@@ -5,5 +5,5 @@ namespace AppFleetNexus.Security.Tenancy;
 
 public class RlsConnectionInterceptor : DbConnectionInterceptor
 {
-    // Phase 2 will fill this in
+    // Phase 3 will fill this in
 }

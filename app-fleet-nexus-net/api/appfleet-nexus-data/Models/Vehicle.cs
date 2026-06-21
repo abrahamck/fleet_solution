@@ -1,4 +1,4 @@
-namespace appfleet_nexus_data.Models;
+namespace AppFleetNexus.Data.Models;
 
 public class Vehicle : BaseEntity
 {
@@ -10,5 +10,5 @@ public class Vehicle : BaseEntity
     public string? LicensePlate { get; set; }
     public string? LicenseState { get; set; }
     public string? Type { get; set; }          // "Truck", "Trailer", etc.
-    public string? Status { get; set; }        // "Active", "Inactive", "Maintenance"
+    public string Status { get; set; } = "Active";  // "Active", "Inactive", "Maintenance"
 }

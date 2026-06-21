@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace appfleet_nexus_api.Controllers;
+namespace AppFleetNexus.Api.Controllers;
 
+[AllowAnonymous]
 [ApiController]
-[Route("[controller]")]
+[Route("api/health")]
 public class HealthController : ControllerBase
 {
     /// <summary>

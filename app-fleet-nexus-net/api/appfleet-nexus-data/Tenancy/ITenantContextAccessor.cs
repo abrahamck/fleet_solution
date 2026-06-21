@@ -1,6 +1,6 @@
 using System;
 
-namespace appfleet_nexus_data.Tenancy;
+namespace AppFleetNexus.Data.Tenancy;
 
 /// <summary>
 /// Provides the current tenant and user IDs to the data layer.
