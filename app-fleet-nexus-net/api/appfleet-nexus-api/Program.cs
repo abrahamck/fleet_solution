@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using AppFleetNexus.Data.Data;
 using AppFleetNexus.Data.Repositories;
 using AppFleetNexus.Security.Extensions;
+using AppFleetNexus.Security.Tenancy;
 
 // Configure Serilog logging
 Log.Logger = new LoggerConfiguration()
@@ -32,18 +33,26 @@ try
     {
         options.AddPolicy("AllowBlazor", policy =>
         {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            policy.WithOrigins(
+                    "https://fleetnexus.io",
+                    "https://www.fleetnexus.io",
+                    "https://localhost:7001"   // local dev
+                )
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
         });
     });
 
-    // Configure database connection
-    var connectionString = builder.Configuration.GetConnectionString("PostgreSQL") 
-        ?? throw new InvalidOperationException("Connection string 'PostgreSQL' not found.");
-    
-    builder.Services.AddDbContext<FleetNexusDbContext>(options =>
-        options.UseNpgsql(connectionString));
+    // Configure database connection with RLS connection interceptor
+    builder.Services.AddDbContext<FleetNexusDbContext>((sp, options) =>
+    {
+        var connectionString = builder.Configuration.GetConnectionString("PostgreSQL") 
+            ?? throw new InvalidOperationException("Connection string 'PostgreSQL' not found.");
+        
+        options.UseNpgsql(connectionString)
+               .AddInterceptors(sp.GetRequiredService<RlsConnectionInterceptor>());
+    });
 
     // Register repositories
     builder.Services.AddScoped<ICarrierRepository, CarrierRepository>();

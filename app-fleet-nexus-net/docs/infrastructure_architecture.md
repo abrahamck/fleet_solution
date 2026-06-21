@@ -41,6 +41,11 @@ The application is broken into two distinct, decoupled **Docker Web Services** r
   * Runs entirely independent of the UI.
   * Configured to accept CORS requests from the UI domain.
   * Connects to the Supabase PostgreSQL database using an injected Environment Variable: `ConnectionStrings__PostgreSQL`.
+  * Integrates with Supabase Auth using the following environment variables (which override the placeholders in `appsettings.json`):
+    * `Supabase__Url`: URL of the Supabase project instance.
+    * `Supabase__AnonKey`: Public API Anonymous Key.
+    * `Supabase__ServiceRoleKey`: SuperUser service role key (bypasses Row-Level Security).
+    * `Supabase__JwtSecret`: JWT signing secret used for local token validation.
 
 ### 3. Supabase (Database)
 * **Role**: Persistent data storage.

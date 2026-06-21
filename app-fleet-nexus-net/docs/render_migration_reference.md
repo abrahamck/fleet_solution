@@ -65,3 +65,19 @@ This document captures the design choices made, issues encountered, and resoluti
 * **Symptom**: Attempting to run `dotnet ef migrations add` returned a `command not found` error.
 * **Root Cause**: Two components were missing: The `dotnet-ef` CLI tool was not installed on the system, and the API project lacked the `Microsoft.EntityFrameworkCore.Design` NuGet package required to execute design-time scaffolding.
 * **Resolution**: The `dotnet-ef` tool was installed globally via bash (`dotnet tool install --global dotnet-ef`). Then, the `Design` package was added to `appfleet-nexus-api.csproj` (`dotnet add package Microsoft.EntityFrameworkCore.Design`) to enable the command to compile and generate the migrations.
+
+---
+
+## 🔒 Environment Secrets on Render
+
+For production deployments, the following environment variables **must** be configured on Render for the API service:
+
+| Variable Name | Appsettings Path | Purpose | Format / Value |
+| --- | --- | --- | --- |
+| `ConnectionStrings__PostgreSQL` | `ConnectionStrings:PostgreSQL` | Connection string to Supabase PostgreSQL DB | ADO.NET Key-Value pair format |
+| `Supabase__Url` | `Supabase:Url` | URL of your Supabase project instance | `https://<your-project>.supabase.co` |
+| `Supabase__AnonKey` | `Supabase:AnonKey` | Public API Anonymous Key | Supabase Anon Key JWT |
+| `Supabase__ServiceRoleKey` | `Supabase:ServiceRoleKey` | SuperUser service role key (bypasses RLS) | Supabase Service Role Key JWT |
+| `Supabase__JwtSecret` | `Supabase:JwtSecret` | JWT signing secret used for token validation | Supabase JWT Secret (HS256) |
+
+These environment variables will override the default placeholder values in `appsettings.json` during hosting execution.
