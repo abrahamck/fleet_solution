@@ -24,6 +24,7 @@ try
     builder.Host.UseSerilog();
 
     // Add services to the container
+    builder.Services.AddControllers();
     builder.Services.AddOpenApi();
     builder.Services.AddCors(options =>
     {
@@ -55,22 +56,7 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("AllowBlazor");
-
-    // Map Carrier endpoints
-    var group = app.MapGroup("/api/carriers")
-        .WithName("Carriers");
-
-    group.MapGet("/top", GetTopCarriers)
-        .WithName("GetTopCarriers")
-        .WithDescription("Get the top 100 carriers by number of power units");
-
-    group.MapGet("/{dotNumber}", GetCarrierByDotNumber)
-        .WithName("GetCarrierByDotNumber")
-        .WithDescription("Get a carrier by DOT number");
-
-    // Health check endpoint
-    app.MapGet("/health", () => new { status = "healthy", timestamp = DateTime.UtcNow })
-        .WithName("HealthCheck");
+    app.MapControllers();
 
     app.Run();
 }
@@ -81,35 +67,4 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-}
-
-// Endpoint handlers
-static async Task<IResult> GetTopCarriers(ICarrierRepository repository)
-{
-    try
-    {
-        var carriers = await repository.GetTopCarriersByPowerUnitsAsync(100);
-        return Results.Ok(new { success = true, count = carriers.Count, data = carriers });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Error retrieving carriers: {ex.Message}", statusCode: 500);
-    }
-}
-
-
-
-static async Task<IResult> GetCarrierByDotNumber(long dotNumber, ICarrierRepository repository)
-{
-    try
-    {
-        var carrier = await repository.GetCarrierByDotNumberAsync(dotNumber);
-        if (carrier is null)
-            return Results.NotFound(new { success = false, message = "Carrier not found" });
-        return Results.Ok(new { success = true, data = carrier });
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Error retrieving carrier: {ex.Message}", statusCode: 500);
-    }
 }
