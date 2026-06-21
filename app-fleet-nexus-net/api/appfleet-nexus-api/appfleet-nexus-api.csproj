@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\appfleet-nexus-data\appfleet-nexus-data.csproj" />
+    <ProjectReference Include="..\appfleet-nexus-security\appfleet-nexus-security.csproj" />
   </ItemGroup>
 
 </Project>
