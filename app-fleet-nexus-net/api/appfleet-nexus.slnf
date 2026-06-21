@@ -1,0 +1,10 @@
+{
+  "solution": {
+    "path": "appfleet-nexus-api\\appfleet-nexus-api.slnx",
+    "projects": [
+      "..\\appfleet-nexus-data\\appfleet-nexus-data.csproj",
+      "..\\appfleet-nexus-security\\appfleet-nexus-security.csproj",
+      "appfleet-nexus-api.csproj"
+    ]
+  }
+}

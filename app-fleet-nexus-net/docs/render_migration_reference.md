@@ -21,6 +21,17 @@ This document captures the design choices made, issues encountered, and resoluti
 * **Decision**: We removed the hardcoded URL, configured `HttpClient` to read `ApiBaseUrl` dynamically from the configuration, and established an `appsettings.json` (containing the Render production URL) alongside an `appsettings.Development.json` (containing the localhost URL).
 * **Reasoning**: This allows the exact same Docker image to function securely in production while letting local `dotnet run` commands naturally fall back to local development servers without requiring any manual code changes before commits.
 
+### 4. Database Schema Management Strategy (EF Core Migrations)
+* **Context**: We needed a mechanism to track, deploy, and version database tables (like `Tenants`, `Users`, `Vehicles`) consistently across local and production Supabase databases.
+* **Decision**: We chose **Entity Framework (EF) Core Code-First Migrations**, embedding the `db.Database.Migrate()` command directly into the API's `Program.cs` startup pipeline.
+* **Reasoning**: 
+  - **Single Source of Truth**: The C# code acts as the ultimate authority. Changing a model in C# instantly produces the matching SQL migration.
+  - **Zero-Touch Production Deployments**: By adding the migration logic to `Program.cs`, Render handles database updates automatically on every commit without needing complex GitHub Actions CI/CD pipelines.
+* **Alternatives Considered & Rejected**:
+  - **Manual Supabase UI Editing**: We rejected this because it completely breaks source control. Creating tables manually in the UI leads to "drift" where local code and production tables don't match, causing silent crashes.
+  - **Raw SQL Scripts (e.g., DbUp, Flyway)**: We rejected this because it forces developers to write raw PostgreSQL scripts *and* write the C# models, duplicating effort. EF Core handles both simultaneously.
+  - **Pre-Deploy Scripts in Render**: We rejected this because Render's free/hobby tier handles simple web services better than complex multi-stage deployment scripts, making `Program.cs` execution cleaner and faster.
+
 ---
 
 ## 🔧 Issues & Resolutions
@@ -44,3 +55,13 @@ This document captures the design choices made, issues encountered, and resoluti
 * **Symptom**: Needing to transition a Hostinger-purchased domain from the old Node.js service to the new .NET UI.
 * **Root Cause**: Render enforces a 1:1 mapping between domains and services.
 * **Resolution**: Removed the domain from the old Node.js Render settings and attached it to the new .NET UI settings. Clarified that Hostinger DNS updates are only necessary if using a `CNAME` for a subdomain, as Root Domains rely on Render's static Anycast IP which remains identical across services.
+
+### Issue 5: EF Core Migrations Failing on Pre-existing Tables
+* **Symptom**: Running `dotnet ef database update` locally threw a PostgreSQL error: `42P07: relation "fmcsa_census" already exists`.
+* **Root Cause**: Because this was the very first EF Core migration, the tool assumed the database was completely empty and generated a `CREATE TABLE` script for the legacy `fmcsa_census` table. However, since the database was previously managed externally and already contained this table, PostgreSQL rejected the creation attempt.
+* **Resolution**: Manually opened the generated `[Timestamp]_MultiTenantSecurityModel.cs` migration file and deleted the `migrationBuilder.CreateTable` code block for `fmcsa_census`. This instructs EF Core to leave the pre-existing table untouched and focus exclusively on generating the new application-specific tables (`Tenants`, `Users`, etc.).
+
+### Issue 6: EF Core Migrations Failing (Missing CLI Tool & Design Package)
+* **Symptom**: Attempting to run `dotnet ef migrations add` returned a `command not found` error.
+* **Root Cause**: Two components were missing: The `dotnet-ef` CLI tool was not installed on the system, and the API project lacked the `Microsoft.EntityFrameworkCore.Design` NuGet package required to execute design-time scaffolding.
+* **Resolution**: The `dotnet-ef` tool was installed globally via bash (`dotnet tool install --global dotnet-ef`). Then, the `Design` package was added to `appfleet-nexus-api.csproj` (`dotnet add package Microsoft.EntityFrameworkCore.Design`) to enable the command to compile and generate the migrations.
