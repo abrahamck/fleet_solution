@@ -37,7 +37,7 @@ try
 
     // Configure database connection
     var connectionString = builder.Configuration.GetConnectionString("PostgreSQL") 
-        ?? "Host=localhost;Port=5432;Database=fleet_nexus_db;Username=postgres;Password=your_password_change_me";
+        ?? throw new InvalidOperationException("Connection string 'PostgreSQL' not found.");
     
     builder.Services.AddDbContext<FleetNexusDbContext>(options =>
         options.UseNpgsql(connectionString));
