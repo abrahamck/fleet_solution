@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace AppFleetNexus.Security.Authentication;
 
@@ -12,17 +13,31 @@ public class SupabaseAuthService : ISupabaseAuthService
 {
     private readonly HttpClient _httpClient;
     private readonly SupabaseOptions _options;
+    private readonly ILogger<SupabaseAuthService> _logger;
 
-    public SupabaseAuthService(HttpClient httpClient, IOptions<SupabaseOptions> options)
+    public SupabaseAuthService(
+        HttpClient httpClient, 
+        IOptions<SupabaseOptions> options,
+        ILogger<SupabaseAuthService> _logger = null)
     {
         _httpClient = httpClient;
         _options = options.Value;
+        this._logger = _logger;
 
-        // Base address
-        _httpClient.BaseAddress = new Uri(_options.Url.TrimEnd('/') + "/");
+        // Normalize URL: remove trailing slashes and any trailing /auth/v1 if misconfigured
+        string baseUrl = _options.Url.TrimEnd('/');
+        if (baseUrl.EndsWith("/auth/v1", StringComparison.OrdinalIgnoreCase))
+        {
+            baseUrl = baseUrl.Substring(0, baseUrl.Length - "/auth/v1".Length).TrimEnd('/');
+        }
+
+        _httpClient.BaseAddress = new Uri(baseUrl + "/");
         _httpClient.DefaultRequestHeaders.Add("apikey", _options.AnonKey);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.AnonKey);
+
+        _logger?.LogInformation("SupabaseAuthService initialized with BaseAddress: {BaseAddress}", _httpClient.BaseAddress);
     }
+
 
     public async Task<AuthResponse> SignUpAsync(SignupRequest request)
     {
@@ -36,6 +51,9 @@ public class SupabaseAuthService : ISupabaseAuthService
                 last_name = request.LastName
             }
         };
+
+        var targetUri = new Uri(_httpClient.BaseAddress, "auth/v1/signup");
+        _logger?.LogInformation("Sending SignUp request to {Uri}", targetUri);
 
         var response = await _httpClient.PostAsJsonAsync("auth/v1/signup", payload);
         await EnsureSuccessStatusCodeAsync(response);
@@ -51,6 +69,9 @@ public class SupabaseAuthService : ISupabaseAuthService
             password = request.Password
         };
 
+        var targetUri = new Uri(_httpClient.BaseAddress, "auth/v1/token?grant_type=password");
+        _logger?.LogInformation("Sending SignIn request to {Uri}", targetUri);
+
         var response = await _httpClient.PostAsJsonAsync("auth/v1/token?grant_type=password", payload);
         await EnsureSuccessStatusCodeAsync(response);
 
@@ -63,6 +84,9 @@ public class SupabaseAuthService : ISupabaseAuthService
         {
             refresh_token = refreshToken
         };
+
+        var targetUri = new Uri(_httpClient.BaseAddress, "auth/v1/token?grant_type=refresh_token");
+        _logger?.LogInformation("Sending RefreshToken request to {Uri}", targetUri);
 
         var response = await _httpClient.PostAsJsonAsync("auth/v1/token?grant_type=refresh_token", payload);
         await EnsureSuccessStatusCodeAsync(response);
