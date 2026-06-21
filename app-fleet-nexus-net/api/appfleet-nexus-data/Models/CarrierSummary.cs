@@ -1,4 +1,4 @@
-namespace appfleet_nexus_data.Models;
+namespace AppFleetNexus.Data.Models;
 
 /// <summary>
 /// Lightweight projection used for the top-carriers query.

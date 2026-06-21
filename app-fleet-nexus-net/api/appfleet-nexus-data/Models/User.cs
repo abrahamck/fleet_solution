@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace appfleet_nexus_data.Models;
+namespace AppFleetNexus.Data.Models;
 
 public class User
 {

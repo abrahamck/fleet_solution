@@ -1,4 +1,4 @@
-namespace appfleet_nexus_data.Models;
+namespace AppFleetNexus.Data.Models;
 
 public class Contact : BaseEntity
 {

@@ -57,7 +57,7 @@ app-fleet-nexus-net/
 
 - **Repository pattern**: All database access goes through repository interfaces (e.g., `ICarrierRepository`). Controllers never access `DbContext` directly.
 - **Dependency injection**: Use constructor injection exclusively. Register services in `Program.cs` or via extension methods.
-- **Async all the way**: All I/O-bound operations must be async. Never use `.Result` or `.Wait()`.
+- **Async all the way**: All I/O-bound operations must be async. Never use `.Result` or `.Wait()`. All async methods must accept a `CancellationToken ct` and propagate it through to every downstream asynchronous call (especially EF Core database calls).
 - **Guard clauses**: Validate inputs at the top of methods. Return early for invalid inputs.
 - **DTOs for API boundaries**: Never expose EF Core entities directly in API responses. Map to DTOs/records.
 - **Minimal try-catch**: Only catch exceptions you can handle. Let the global exception handler deal with unexpected errors.
@@ -73,22 +73,52 @@ app-fleet-nexus-net/
 
 ### EF Core Guidelines
 
-- **No lazy loading**. Use `.Include()` for eager loading or projection with `.Select()`.
-- **Use `Guid` primary keys** with `DEFAULT gen_random_uuid()` on the DB side.
-- **Use `DateTime` (UTC)** for all timestamp properties. The DB stores `TIMESTAMPTZ`.
-- **Migrations**: Name them descriptively (e.g., `AddVehicleTable`, `AddSoftDeleteToContacts`).
-- **Never use raw SQL** unless absolutely necessary. If you must, parameterize everything.
+#### DbContext & Connection
+- **Lifetime**: Always register `DbContext` as **Scoped** via `AddDbContext`. Never Singleton. Use `IServiceScopeFactory` in background jobs / hosted services to resolve a scoped context.
+- **Supabase PgBouncer**: For production connection strings, connect to the PgBouncer endpoint (port `6543`) and explicitly append: `Maximum Pool Size=20;Minimum Pool Size=2;No Reset On Close=true;`.
+- **Resiliency**: Enable retry limits and timeouts: `.EnableRetryOnFailure(3).CommandTimeout(30)`.
+- **Naming**: Enforce snake_case naming globally: `optionsBuilder.UseSnakeCaseNamingConvention()`.
+
+#### Queries (Reads)
+- **Always Project**: Project queries to DTOs/records using `.Select(...)` for read-only operations. This implicitly disables tracking.
+- **No Tracking**: If raw entities must be returned for read-only purposes, explicitly add `.AsNoTracking()`.
+- **No Lazy Loading**: Avoid lazy loading (do not add `.UseLazyLoadingProxies()`). Explicitly use `.Include()` / `.ThenInclude()` only.
+- **No N+1 Queries**: Never access navigation properties inside loops. Use `LogTo(Console.WriteLine)` in Development to audit generated SQL.
+- **Pagination**: Always paginate list endpoints. Use offset pagination (`.Skip().Take()`) for small sets, and keyset pagination (`.Where(v => v.Id > lastSeenId).Take(n)`) for large tables (e.g., logs, trip history).
+- **Compiled Queries**: Use `EF.CompileAsyncQuery(...)` for hot paths.
+
+#### Writes & Bulk Operations
+- **Single Entity CRUD**: Use EF tracking + `SaveChangesAsync(ct)`.
+- **Bulk Mutations**: Do not call `SaveChanges` in a loop. Use `ExecuteUpdateAsync` or `ExecuteDeleteAsync` for batch updates/deletions.
+- **Bulk Imports**: For large-scale insertions (e.g., CSV imports), bypass EF Core and use Npgsql binary COPY via `BeginBinaryImportAsync`.
+- **Stored Procedures**: Reserve DB functions/stored procedures for reporting/aggregations only (query via `FromSqlRaw` mapped to `.HasNoKey()` models). Do not use them for standard CRUD writes.
+
+#### Entity Configuration
+- **Organization**: Define entity configurations in separate `IEntityTypeConfiguration<T>` classes. Load them in `DbContext` using `modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly())`.
+- **Enums**: Always store enums as strings in the database using `.HasConversion<string>()` to ensure readability in the Supabase dashboard.
+- **Indexes**: Define all indexes explicitly in the configuration: foreign keys, frequent search parameters, unique constraints (using partial indexes for soft deletes), and composite indexes (equality first, range columns last).
+
+#### Migrations
+- **Generation**: Create migrations using `dotnet ef migrations add <DescriptiveName>`.
+- **Safety**: Never edit the migration snapshot history manually.
+- **Production**: Never call `EnsureCreated()` in production; always use `MigrateAsync()` during application startup.
+- **Verification**: Check if the migration scripts need to be updated / added to make schema changes in PostgreSQL.
 
 ### Error Handling
 
 - **API responses**: Return consistent shapes: `{ success: true, data: ... }` or `{ success: false, message: "..." }`.
-- **Never leak stack traces** in non-development environments.
+- **Domain Exceptions**: Throw domain-specific exceptions (e.g., `NotFoundException`, `ConflictException`) and map them to HTTP status codes via global middleware.
+- **No Leaks**: Never surface raw EF Core or PostgreSQL database message details to the client. Never leak stack traces in non-development environments.
 - **Log errors with Serilog**: Use structured logging with `_logger.LogError(ex, "Message {Param}", value)`.
 
 ### XML Documentation
 
 - **Required on**: All public interfaces, public methods, and DTOs.
 - **Format**: Use `<summary>` for the main description. Use `<param>` for parameters. Use `<returns>` for return values.
+
+### NuGet Packages
+
+- **Versioning**: When adding a NuGet package, always install the latest stable version. If that is not compatible for any reason, go to the next lower version until you find one that works. Document why the latest version could not be used.
 
 ---
 

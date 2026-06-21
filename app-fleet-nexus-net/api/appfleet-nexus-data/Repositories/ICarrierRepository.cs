@@ -1,6 +1,6 @@
-using appfleet_nexus_data.Models;
+using AppFleetNexus.Data.Models;
 
-namespace appfleet_nexus_data.Repositories;
+namespace AppFleetNexus.Data.Repositories;
 
 public interface ICarrierRepository
 {

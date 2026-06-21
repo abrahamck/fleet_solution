@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace appfleet_nexus_data.Migrations
+namespace AppFleetNexus.Data.Migrations
 {
     /// <inheritdoc />
     public partial class MultiTenantSecurityModel : Migration

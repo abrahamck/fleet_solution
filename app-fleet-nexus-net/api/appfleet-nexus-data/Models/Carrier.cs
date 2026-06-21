@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace appfleet_nexus_data.Models;
+namespace AppFleetNexus.Data.Models;
 
 [Table("fmcsa_census")]
 public class Carrier

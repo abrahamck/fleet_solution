@@ -2,14 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using appfleet_nexus_data.Models;
-using appfleet_nexus_data.Tenancy;
+using AppFleetNexus.Data.Models;
+using AppFleetNexus.Data.Tenancy;
 
-namespace appfleet_nexus_data.Data;
+namespace AppFleetNexus.Data.Data;
 
 public class FleetNexusDbContext : DbContext
 {
-    private readonly ITenantContextAccessor _tenantAccessor;
+    private readonly ITenantContextAccessor? _tenantAccessor;
 
     // We allow a nullable accessor to support design-time tools if they don't provide one, 
     // though ideally the DI container provides it.
@@ -17,7 +17,7 @@ public class FleetNexusDbContext : DbContext
         DbContextOptions<FleetNexusDbContext> options,
         ITenantContextAccessor? tenantAccessor = null) : base(options)
     {
-        _tenantAccessor = tenantAccessor!; // Will be null at design time if not registered
+        _tenantAccessor = tenantAccessor;
     }
 
     public DbSet<Carrier> Carriers { get; set; }
@@ -40,11 +40,67 @@ public class FleetNexusDbContext : DbContext
             entity.HasKey(e => e.DotNumber);
         });
 
-        // Composite key for TenantUser
+        // ─── Table name mapping (snake_case to match Supabase/PostgreSQL convention) ───
+        modelBuilder.Entity<Tenant>().ToTable("tenants");
+        modelBuilder.Entity<User>().ToTable("users");
+        modelBuilder.Entity<TenantUser>().ToTable("tenant_users");
+        modelBuilder.Entity<Contact>().ToTable("contacts");
+        modelBuilder.Entity<Vehicle>().ToTable("vehicles");
+
+        // ─── TenantUser composite key ───
         modelBuilder.Entity<TenantUser>()
             .HasKey(tu => new { tu.UserId, tu.TenantId });
 
-        // Global query filters for tenant isolation + soft delete
+        // ─── Relationships ───
+
+        // Contact → Tenant FK
+        modelBuilder.Entity<Contact>()
+            .HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(c => c.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Vehicle → Tenant FK
+        modelBuilder.Entity<Vehicle>()
+            .HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(v => v.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // ─── Indexes ───
+
+        // Unique email on users
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
+        // Single-tenant-per-user (can be dropped later for multi-tenant support)
+        modelBuilder.Entity<TenantUser>()
+            .HasIndex(tu => tu.UserId)
+            .IsUnique();
+
+        // Filtered index on contacts by tenant (active records only)
+        modelBuilder.Entity<Contact>()
+            .HasIndex(c => c.TenantId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        // Filtered index on vehicles by tenant (active records only)
+        modelBuilder.Entity<Vehicle>()
+            .HasIndex(v => v.TenantId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        // Unique unit_number per tenant (active records only)
+        modelBuilder.Entity<Vehicle>()
+            .HasIndex(v => new { v.TenantId, v.UnitNumber })
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        // ─── Default values ───
+        modelBuilder.Entity<Vehicle>()
+            .Property(v => v.Status)
+            .HasDefaultValue("Active");
+
+        // ─── Global query filters for tenant isolation + soft delete ───
         // If _tenantAccessor is null (e.g. design time), we fallback to Guid.Empty to avoid NRE.
         modelBuilder.Entity<Contact>()
             .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
@@ -53,10 +109,28 @@ public class FleetNexusDbContext : DbContext
             .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
     }
 
+    public override int SaveChanges()
+    {
+        ApplyAuditInfo();
+        return base.SaveChanges();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplyAuditInfo();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
     public override Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         ApplyAuditInfo();
         return base.SaveChangesAsync(ct);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken ct = default)
+    {
+        ApplyAuditInfo();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, ct);
     }
 
     private void ApplyAuditInfo()
