@@ -2,6 +2,7 @@ using Serilog;
 using Microsoft.EntityFrameworkCore;
 using appfleet_nexus_data.Data;
 using appfleet_nexus_data.Repositories;
+using AppFleetNexus.Security.Extensions;
 
 // Configure Serilog logging
 Log.Logger = new LoggerConfiguration()
@@ -25,6 +26,7 @@ try
 
     // Add services to the container
     builder.Services.AddControllers();
+    builder.Services.AddFleetNexusSecurity(builder.Configuration);
     builder.Services.AddOpenApi();
     builder.Services.AddCors(options =>
     {
@@ -56,6 +58,7 @@ try
 
     app.UseHttpsRedirection();
     app.UseCors("AllowBlazor");
+    app.UseFleetNexusSecurity();
     app.MapControllers();
 
     app.Run();
