@@ -9,6 +9,8 @@ using System.Text;
 using AppFleetNexus.Security.Authentication;
 using AppFleetNexus.Security.Tenancy;
 using AppFleetNexus.Data.Tenancy;
+using AppFleetNexus.Security.Authorization;
+using AppFleetNexus.Security.Middleware;
 
 namespace AppFleetNexus.Security.Extensions;
 
@@ -50,18 +52,24 @@ public static class SecurityServiceExtensions
                 };
             });
 
-        // 3. Default-deny authorization policy
+        // 3. Default-deny authorization policy + SuperAdmin policy
         services.AddAuthorization(options =>
         {
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .Build();
+
+            options.AddPolicy("SuperAdmin", policy =>
+                policy.Requirements.Add(new SuperAdminRequirement()));
         });
 
         // 4. Register scoped TenantContext (implements both interfaces)
         services.AddScoped<TenantContext>();
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
         services.AddScoped<ITenantContextAccessor>(sp => sp.GetRequiredService<TenantContext>());
+
+        // Register SuperAdmin authorization handler
+        services.AddScoped<IAuthorizationHandler, SuperAdminHandler>();
 
         // 5. Register RLS interceptor
         services.AddScoped<RlsConnectionInterceptor>();
@@ -77,6 +85,8 @@ public static class SecurityServiceExtensions
     /// </summary>
     public static IApplicationBuilder UseFleetNexusSecurity(this IApplicationBuilder app)
     {
+        app.UseMiddleware<GlobalExceptionMiddleware>();
+        app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMiddleware<TenantMiddleware>();
