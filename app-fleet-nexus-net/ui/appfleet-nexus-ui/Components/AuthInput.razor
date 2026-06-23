@@ -1,0 +1,57 @@
+@namespace appfleet_nexus_ui.Components
+@using System.Linq.Expressions
+
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <h5 class="fw-bold text-dark mb-1">@Title</h5>
+    }
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="text-muted small mb-2 d-block">@Label</label>
+    }
+    <input value="@Value" 
+           @oninput="OnInput"
+           class="auth-input" 
+           placeholder="@Placeholder" 
+           type="@Type"
+           inputmode="@InputMode"
+           autocapitalize="@Autocapitalize"
+           autocorrect="@Autocorrect"
+           disabled="@Disabled"
+           @attributes="AdditionalAttributes" />
+    
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <span class="auth-validation-msg">@Error</span>
+    }
+    else if (For != null)
+    {
+        <ValidationMessage For="@For" class="auth-validation-msg" />
+    }
+</div>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string? InputMode { get; set; }
+    [Parameter] public string? Autocapitalize { get; set; }
+    [Parameter] public string? Autocorrect { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public Expression<Func<string>>? For { get; set; }
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private Task OnInput(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString();
+        return ValueChanged.InvokeAsync(Value);
+    }
+}

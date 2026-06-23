@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark bg-primary">
+@inject CustomAuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand" href="">
             <i class="bi bi-truck"></i> FleetNexus
@@ -21,6 +24,32 @@
                 <span class="bi bi-truck-nav-menu" aria-hidden="true"></span> Top Carriers
             </NavLink>
         </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <!-- Mobile only user status and logout -->
+                <div class="nav-item px-3 d-sm-none border-top border-secondary mt-3 pt-3">
+                    <div class="px-3 mb-2 small text-light text-truncate">
+                        <i class="bi bi-person-circle me-1"></i> @context.User.Identity?.Name
+                    </div>
+                    <button class="btn btn-link nav-link w-100 text-start text-danger" @onclick="HandleLogout" style="text-decoration: none;">
+                        <i class="bi bi-box-arrow-right me-2"></i> Log Out
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3 d-sm-none border-top border-secondary mt-3 pt-3">
+                    <NavLink class="nav-link" href="login">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 d-sm-none">
+                    <NavLink class="nav-link" href="signup">
+                        <i class="bi bi-person-plus me-2"></i> Sign Up
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 
@@ -32,5 +61,11 @@
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthProvider.LogoutAsync();
+        Navigation.NavigateTo("/");
     }
 }

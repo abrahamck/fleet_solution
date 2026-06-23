@@ -1,0 +1,131 @@
+@page "/login"
+@inject HttpClient Http
+@inject CustomAuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Sign In - FleetNexus</PageTitle>
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <h2 class="auth-title mb-2">Welcome Back</h2>
+            <p class="auth-subtitle">Sign in to manage your fleet</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-modern alert-modern-danger mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>@_errorMessage</div>
+            </div>
+        }
+
+        <EditForm Model="_loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <AuthInput @bind-Value="_loginModel.Email" 
+                       Placeholder="Email Address" 
+                       Type="email"
+                       InputMode="email"
+                       Autocapitalize="none"
+                       Autocorrect="off"
+                       IconClass="bi bi-envelope"
+                       Disabled="@_isSubmitting"
+                       For="@(() => _loginModel.Email)" />
+
+            <AuthInput @bind-Value="_loginModel.Password" 
+                       Placeholder="Password" 
+                       Type="password"
+                       IconClass="bi bi-lock"
+                       Disabled="@_isSubmitting"
+                       For="@(() => _loginModel.Password)" />
+
+            <button type="submit" class="auth-btn mt-4" disabled="@_isSubmitting">
+                @if (_isSubmitting)
+                {
+                    <span class="btn-spinner"></span>
+                    <span>Signing in...</span>
+                }
+                else
+                {
+                    <span>Sign In</span>
+                    <i class="bi bi-arrow-right"></i>
+                }
+            </button>
+        </EditForm>
+
+        <div class="auth-divider">or</div>
+
+        <div class="text-center">
+            <span class="text-muted">Don't have an account? </span>
+            <a href="signup" class="auth-link">Sign up now</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly LoginModel _loginModel = new();
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    private async Task HandleLogin()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var request = new LoginRequest(_loginModel.Email, _loginModel.Password);
+            var response = await Http.PostAsJsonAsync("api/auth/login", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var authResult = await response.Content.ReadFromJsonAsync<AuthResponse>();
+                if (authResult != null)
+                {
+                    var session = new UserSession(
+                        authResult.AccessToken,
+                        authResult.RefreshToken,
+                        authResult.Email,
+                        authResult.UserId
+                    );
+                    await AuthProvider.LoginAsync(session);
+                    Navigation.NavigateTo("/");
+                }
+                else
+                {
+                    _errorMessage = "Invalid response received from authentication server.";
+                }
+            }
+            else
+            {
+                // Try to parse the backend error response
+                var errorContent = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    using var doc = JsonDocument.Parse(errorContent);
+                    if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                    {
+                        _errorMessage = messageProp.GetString();
+                    }
+                    else
+                    {
+                        _errorMessage = "Invalid email or password.";
+                    }
+                }
+                catch
+                {
+                    _errorMessage = "Invalid email or password.";
+                }
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again later.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

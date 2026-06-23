@@ -1,6 +1,19 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <div class="container mt-5 text-center">
+                        <div class="card shadow border-0 p-5 mx-auto" style="max-width: 500px;">
+                            <i class="bi bi-shield-lock display-1 text-danger mb-4"></i>
+                            <h3 class="fw-bold mb-2">Access Denied</h3>
+                            <p class="text-muted mb-4">You need to sign in to access this resource.</p>
+                            <a href="/login" class="btn btn-primary btn-lg px-5">Sign In</a>
+                        </div>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+</CascadingAuthenticationState>
