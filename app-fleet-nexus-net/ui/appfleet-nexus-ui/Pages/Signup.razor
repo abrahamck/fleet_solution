@@ -1,0 +1,433 @@
+@page "/signup"
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+@using appfleet_nexus_ui.Models
+@using appfleet_nexus_ui.Components
+@implements IDisposable
+@inject HttpClient Http
+@inject CustomAuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Create Account - FleetNexus</PageTitle>
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <h2 class="auth-title mb-2">Get Started</h2>
+            <p class="auth-subtitle">Create a free account for your fleet</p>
+        </div>
+
+        <!-- Progress Tracker (5 Steps) -->
+        <div class="step-tracker-container">
+            @for (int i = 1; i <= 5; i++)
+            {
+                var stepNum = i;
+                <div class="step-indicator @(_currentStep == stepNum ? "active" : _currentStep > stepNum ? "completed" : "")">
+                    <div class="step-dot"></div>
+                </div>
+                @if (stepNum < 5)
+                {
+                    <div class="step-connector @(_currentStep > stepNum ? "completed" : "")"></div>
+                }
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-modern alert-modern-danger mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>@_errorMessage</div>
+            </div>
+        }
+
+        <EditForm EditContext="_editContext">
+            <DataAnnotationsValidator />
+
+            @if (_currentStep == 1)
+            {
+                <!-- STEP 1: EMAIL ADDRESS -->
+                <div class="fade-in">
+                    <AuthInput @bind-Value="_signupModel.Email" 
+                               Id="input-email"
+                               Title="What is your email address?"
+                               Label="We'll use this email as your username to log in."
+                               Placeholder="name@example.com" 
+                               Type="email"
+                               InputMode="email"
+                               Autocapitalize="none"
+                               Autocorrect="off"
+                               autocomplete="username email"
+                               Error="@_emailError"
+                               @onkeyup="HandleKeyUp" />
+                </div>
+            }
+            else if (_currentStep == 2)
+            {
+                <!-- STEP 2: FIRST NAME -->
+                <div class="fade-in">
+                    <AuthInput @bind-Value="_signupModel.FirstName" 
+                               Id="input-firstname"
+                               Title="What is your first name?"
+                               Label="We'll use this to personalize your experience."
+                               Placeholder="Jane" 
+                               autocomplete="given-name"
+                               Error="@_firstNameError"
+                               @onkeyup="HandleKeyUp" />
+                </div>
+            }
+            else if (_currentStep == 3)
+            {
+                <!-- STEP 3: LAST NAME -->
+                <div class="fade-in">
+                    <AuthInput @bind-Value="_signupModel.LastName" 
+                               Id="input-lastname"
+                               Title="What is your last name?"
+                               Label="Please enter your last name for profile records."
+                               Placeholder="Doe" 
+                               autocomplete="family-name"
+                               Error="@_lastNameError"
+                               @onkeyup="HandleKeyUp" />
+                </div>
+            }
+            else if (_currentStep == 4)
+            {
+                <!-- STEP 4: PASSWORD -->
+                <div class="fade-in">
+                    <AuthInput @bind-Value="_signupModel.Password" 
+                               Id="input-password"
+                               Title="Choose a password"
+                               Label="Make sure it's at least 6 characters long."
+                               Placeholder="Minimum 6 characters" 
+                               Type="password"
+                               autocomplete="new-password"
+                               Error="@_passwordError"
+                               @onkeyup="HandleKeyUp" />
+                </div>
+            }
+            else if (_currentStep == 5)
+            {
+                <!-- STEP 5: RE-ENTER PASSWORD -->
+                <div class="fade-in">
+                    <AuthInput @bind-Value="_signupModel.ConfirmPassword" 
+                               Id="input-confirm-password"
+                               Title="Verify your password"
+                               Label="Please re-type your password to confirm."
+                               Placeholder="Re-enter password" 
+                               Type="password"
+                               autocomplete="new-password"
+                               Disabled="@_isSubmitting"
+                               Error="@_confirmPasswordError"
+                               @onkeyup="HandleKeyUp" />
+                </div>
+            }
+
+            <!-- Navigation Buttons -->
+            <div class="row g-2 mt-4">
+                <div class="col-6">
+                    <button type="button" class="auth-secondary-btn w-100" 
+                            @onclick="GoBack" 
+                            disabled="@(_currentStep == 1 || _isSubmitting)">
+                        <i class="bi bi-arrow-left me-1"></i> Previous
+                    </button>
+                </div>
+                <div class="col-6">
+                    @if (_currentStep == 5)
+                    {
+                        <button type="button" class="auth-btn" @onclick="HandleSignup" disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="btn-spinner"></span>
+                                <span>Submitting...</span>
+                            }
+                            else
+                            {
+                                <span>Submit</span>
+                                <i class="bi bi-check-circle"></i>
+                            }
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="auth-btn" @onclick="GoNext">
+                            <span>Next</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        </EditForm>
+
+        <div class="auth-divider">or</div>
+
+        <div class="text-center">
+            <span class="text-muted">Already have an account? </span>
+            <a href="login" class="auth-link">Sign in instead</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly SignupModel _signupModel = new();
+    private EditContext _editContext = default!;
+    private int _currentStep = 1;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    // Field-specific validation errors
+    private string? _emailError;
+    private string? _firstNameError;
+    private string? _lastNameError;
+    private string? _passwordError;
+    private string? _confirmPasswordError;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_signupModel);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RestoreStateAsync();
+            await FocusStepInput();
+        }
+    }
+
+    private async Task FocusStepInput()
+    {
+        var inputId = _currentStep switch
+        {
+            1 => "input-email",
+            2 => "input-firstname",
+            3 => "input-lastname",
+            4 => "input-password",
+            5 => "input-confirm-password",
+            _ => null
+        };
+
+        if (inputId != null)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("eval", $"setTimeout(function() {{ document.getElementById('{inputId}')?.focus(); }}, 100);");
+            }
+            catch
+            {
+                // Fail silently if DOM is not ready
+            }
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (_currentStep == 5)
+            {
+                await HandleSignup();
+            }
+            else
+            {
+                await GoNext();
+            }
+        }
+    }
+
+    private async void HandleFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        // Run step-specific validation as fields change
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.Email)) ValidateStep1();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.FirstName)) ValidateStep2();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.LastName)) ValidateStep3();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.Password)) ValidateStep4();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.ConfirmPassword)) ValidateStep5();
+        
+        await SaveStateAsync();
+        StateHasChanged();
+    }
+
+    private async Task SaveStateAsync()
+    {
+        try
+        {
+            var state = new SignupState(_currentStep, _signupModel.Email, _signupModel.FirstName, _signupModel.LastName);
+            var json = JsonSerializer.Serialize(state);
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "signup_state", json);
+        }
+        catch
+        {
+            // Fail silently
+        }
+    }
+
+    private async Task RestoreStateAsync()
+    {
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "signup_state");
+            if (!string.IsNullOrEmpty(json))
+            {
+                var state = JsonSerializer.Deserialize<SignupState>(json);
+                if (state != null)
+                {
+                    _currentStep = state.CurrentStep;
+                    _signupModel.Email = state.Email ?? string.Empty;
+                    _signupModel.FirstName = state.FirstName ?? string.Empty;
+                    _signupModel.LastName = state.LastName ?? string.Empty;
+
+                    // Hydrate field validation messages
+                    if (_currentStep >= 2) ValidateStep1();
+                    if (_currentStep >= 3) ValidateStep2();
+                    if (_currentStep >= 4) ValidateStep3();
+                    if (_currentStep >= 5) ValidateStep4();
+
+                    StateHasChanged();
+                }
+            }
+        }
+        catch
+        {
+            // Fail silently
+        }
+    }
+
+    private async Task GoNext()
+    {
+        bool isValid = _currentStep switch
+        {
+            1 => ValidateStep1(),
+            2 => ValidateStep2(),
+            3 => ValidateStep3(),
+            4 => ValidateStep4(),
+            _ => false
+        };
+
+        if (isValid)
+        {
+            _currentStep++;
+            await SaveStateAsync();
+            StateHasChanged();
+            await FocusStepInput();
+        }
+    }
+
+    private async Task GoBack()
+    {
+        if (_currentStep > 1)
+        {
+            _currentStep--;
+            await SaveStateAsync();
+            StateHasChanged();
+            await FocusStepInput();
+        }
+    }
+
+    private bool ValidateField<T>(T value, string propertyName, ref string? errorField)
+    {
+        errorField = null;
+        var results = new List<ValidationResult>();
+        var context = new ValidationContext(_signupModel) { MemberName = propertyName };
+        bool isValid = Validator.TryValidateProperty(value, context, results);
+        if (!isValid)
+        {
+            errorField = results.FirstOrDefault()?.ErrorMessage;
+        }
+        return isValid;
+    }
+
+    private bool ValidateStep1() => ValidateField(_signupModel.Email, nameof(SignupModel.Email), ref _emailError);
+    private bool ValidateStep2() => ValidateField(_signupModel.FirstName, nameof(SignupModel.FirstName), ref _firstNameError);
+    private bool ValidateStep3() => ValidateField(_signupModel.LastName, nameof(SignupModel.LastName), ref _lastNameError);
+    private bool ValidateStep4() => ValidateField(_signupModel.Password, nameof(SignupModel.Password), ref _passwordError);
+    private bool ValidateStep5() => ValidateField(_signupModel.ConfirmPassword, nameof(SignupModel.ConfirmPassword), ref _confirmPasswordError);
+
+    private async Task HandleSignup()
+    {
+        if (!ValidateStep5())
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var request = new SignupRequest(
+                _signupModel.Email, 
+                _signupModel.Password, 
+                _signupModel.FirstName, 
+                _signupModel.LastName
+            );
+            var response = await Http.PostAsJsonAsync("api/auth/signup", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var authResult = await response.Content.ReadFromJsonAsync<AuthResponse>();
+                if (authResult != null)
+                {
+                    // Clear state on success
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "signup_state");
+                    }
+                    catch { }
+
+                    var session = new UserSession(
+                        authResult.AccessToken,
+                        authResult.RefreshToken,
+                        authResult.Email,
+                        authResult.UserId
+                    );
+                    await AuthProvider.LoginAsync(session);
+                    Navigation.NavigateTo("/");
+                }
+                else
+                {
+                    _errorMessage = "Account created successfully, but auto-login failed. Please sign in manually.";
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    using var doc = JsonDocument.Parse(errorContent);
+                    if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                    {
+                        _errorMessage = messageProp.GetString();
+                    }
+                    else
+                    {
+                        _errorMessage = "Could not register account. Email might already be in use.";
+                    }
+                }
+                catch
+                {
+                    _errorMessage = "Could not register account. Please check your credentials.";
+                }
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again later.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_editContext != null)
+        {
+            _editContext.OnFieldChanged -= HandleFieldChanged;
+        }
+    }
+
+    private record SignupState(int CurrentStep, string? Email, string? FirstName, string? LastName);
+}

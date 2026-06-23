@@ -187,8 +187,22 @@ is_deleted      BOOLEAN NOT NULL DEFAULT FALSE
 ## Blazor / Frontend Standards
 
 - **No direct Supabase calls** from the Blazor app. All auth and data flows go through the .NET API.
-- **Store JWTs** in memory (not localStorage) for security. Use refresh tokens for persistence.
+- **Store JWTs** in memory (not localStorage) for security. Use refresh tokens for persistence. (Note: For dev/MVP configurations, localStorage is permitted for testing token persistence).
 - **Use `HttpClient` with `AuthorizationMessageHandler`** for authenticated API calls.
+
+---
+
+## UX & Front-End Architecture Rules
+- **DRY Architecture:** Create reusable components, custom hooks, and utility functions; avoid duplicate code.
+- **Zero Inline Styles:** Ban inline styling; strictly use shared CSS/SCSS classes or design-system design tokens.
+- **Progressive Disclosure:** Distribute complex forms into multi-step paths, limiting each step to **one input item** or a single cohesive logical group to lower cognitive load.
+- **State & Input Protection:** Never lose entered data; preserve form state across steps, refreshes, or navigation.
+- **Smart Defaults:** Use sensible defaults, semantic HTML autocompletes, and pre-fills to maximize speed.
+- **Mobile-First Hierarchy:** Design for small touch screens first; ensure elements have clear visual hierarchy with exactly **one dominant primary action** per view.
+- **System Feedback:** Always explicitly code distinct UI states for **loading**, **success**, and **actionable errors**.
+- **Real-Time Validation:** Provide instant, inline validation and descriptive error messages next to the input field.
+- **Strict Accessibility (WCAG):** Mandate semantic HTML, explicit labels, keyboard focus rings, and valid ARIA attributes.
+- **Defensive UI:** Code meaningful "Empty States" for zero-data views, and require confirmation for destructive actions.
 
 ---
 

@@ -1,12 +1,44 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject CustomAuthenticationStateProvider AuthProvider
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
+        <div class="top-row px-4">
+            <AuthorizeView>
+                <Authorized>
+                    <span class="text-muted me-3 d-none d-sm-inline-block">
+                        <i class="bi bi-person-circle me-1"></i> @context.User.Identity?.Name
+                    </span>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="HandleLogout">
+                        <i class="bi bi-box-arrow-right me-1"></i> Log Out
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="login" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                    </a>
+                    <a href="signup" class="btn btn-sm btn-primary">
+                        <i class="bi bi-person-plus me-1"></i> Sign Up
+                    </a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
         <article class="content px-4">
             @Body
         </article>
     </main>
 </div>
+
+@code {
+    private async Task HandleLogout()
+    {
+        await AuthProvider.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+}

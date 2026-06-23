@@ -36,7 +36,9 @@ try
             policy.WithOrigins(
                     "https://fleetnexus.io",
                     "https://www.fleetnexus.io",
-                    "https://localhost:7001"   // local dev
+                    "https://localhost:7001",   // local dev
+                    "http://localhost:5297",    // local blazor dev http
+                    "https://localhost:7154"    // local blazor dev https
                 )
                 .AllowAnyMethod()
                 .AllowAnyHeader()
