@@ -24,19 +24,21 @@
             <DataAnnotationsValidator />
 
             <AuthInput @bind-Value="_loginModel.Email" 
+                       Id="login-email"
                        Placeholder="Email Address" 
                        Type="email"
                        InputMode="email"
                        Autocapitalize="none"
                        Autocorrect="off"
-                       IconClass="bi bi-envelope"
+                       autocomplete="username email"
                        Disabled="@_isSubmitting"
                        For="@(() => _loginModel.Email)" />
 
             <AuthInput @bind-Value="_loginModel.Password" 
+                       Id="login-password"
                        Placeholder="Password" 
                        Type="password"
-                       IconClass="bi bi-lock"
+                       autocomplete="current-password"
                        Disabled="@_isSubmitting"
                        For="@(() => _loginModel.Password)" />
 

@@ -5,13 +5,13 @@
 <PageTitle>Top Carriers - FleetNexus</PageTitle>
 
 <div class="container mt-5">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-5 fw-bold">Top Carriers</h1>
-            <p class="lead text-muted">View the top 10 carriers by number of power units</p>
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-sm">
+            <h1 class="display-5 fw-bold text-dark">Top Carriers</h1>
+            <p class="lead text-muted mb-0">View the top 10 carriers by number of power units</p>
         </div>
-        <div class="col-auto">
-            <a href="/" class="btn btn-outline-primary">
+        <div class="col-sm-auto">
+            <a href="/" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Home
             </a>
         </div>
@@ -19,75 +19,102 @@
 
     @if (loading)
     {
-        <div class="alert alert-info" role="alert">
-            <div class="spinner-border spinner-border-sm me-2" role="status">
-                <span class="visually-hidden">Loading...</span>
+        <!-- Premium skeleton loading state -->
+        <div class="premium-table-container">
+            <div class="skeleton-row">
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
             </div>
-            Loading carriers data...
         </div>
     }
     else if (error)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Error!</strong> Failed to load carriers data: @errorMessage
-            <button type="button" class="btn-close" @onclick="ReloadData"></button>
+        <!-- Premium error state -->
+        <div class="premium-empty-state">
+            <div class="premium-empty-icon">
+                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+            </div>
+            <h3 class="premium-empty-title">Failed to Load Carriers</h3>
+            <p class="premium-empty-desc">@errorMessage</p>
+            <div class="row w-100 justify-content-center mt-2">
+                <div class="col-auto">
+                    <button class="auth-btn px-4" @onclick="ReloadData">
+                        <i class="bi bi-arrow-clockwise"></i> Try Again
+                    </button>
+                </div>
+            </div>
         </div>
-        <button class="btn btn-primary" @onclick="ReloadData">
-            <i class="bi bi-arrow-clockwise"></i> Try Again
-        </button>
     }
     else if (carriers != null && carriers.Count > 0)
     {
+        <!-- Success State: Premium Table Card -->
         <div class="row mb-3">
             <div class="col">
-                <span class="badge bg-primary">Total: @carriers.Count carriers</span>
+                <span class="badge badge-brand-cobalt px-3 py-2">Total: @carriers.Count carriers</span>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover table-bordered table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th scope="col">
-                            <i class="bi bi-hash"></i> DOT Number
-                        </th>
-                        <th scope="col">
-                            <i class="bi bi-building"></i> Legal Name
-                        </th>
-                        <th scope="col">
-                            <i class="bi bi-geo-alt"></i> City
-                        </th>
-                        <th scope="col">
-                            <i class="bi bi-map"></i> State
-                        </th>
-                        <th scope="col text-end">
-                            <i class="bi bi-truck"></i> Power Units
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var carrier in carriers)
-                    {
+        <div class="premium-table-container">
+            <div class="table-responsive">
+                <table class="premium-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <strong>@carrier.DotNumber</strong>
-                            </td>
-                            <td>@(carrier.LegalName ?? string.Empty)</td>
-                            <td>@(carrier.City ?? string.Empty)</td>
-                            <td>@(carrier.State ?? string.Empty)</td>
-                            <td class="text-end">
-                                <span class="badge bg-success">@(carrier.NumberOfPowerUnits ?? 0)</span>
-                            </td>
+                            <th scope="col">
+                                <i class="bi bi-hash"></i> DOT Number
+                            </th>
+                            <th scope="col">
+                                <i class="bi bi-building"></i> Legal Name
+                            </th>
+                            <th scope="col">
+                                <i class="bi bi-geo-alt"></i> City
+                            </th>
+                            <th scope="col">
+                                <i class="bi bi-map"></i> State
+                            </th>
+                            <th scope="col" class="text-end">
+                                <i class="bi bi-truck"></i> Power Units
+                            </th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var carrier in carriers)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@carrier.DotNumber</strong>
+                                </td>
+                                <td>@(carrier.LegalName ?? string.Empty)</td>
+                                <td>@(carrier.City ?? string.Empty)</td>
+                                <td>@(carrier.State ?? string.Empty)</td>
+                                <td class="text-end">
+                                    <span class="badge badge-brand-green px-3 py-2">@(carrier.NumberOfPowerUnits ?? 0)</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
-    else if (!loading && !error)
+    else
     {
-        <div class="alert alert-warning" role="alert">
-            <i class="bi bi-exclamation-triangle"></i> No carriers found.
+        <!-- Premium Empty State -->
+        <div class="premium-empty-state">
+            <div class="premium-empty-icon">
+                <i class="bi bi-truck text-muted"></i>
+            </div>
+            <h3 class="premium-empty-title">No Carriers Found</h3>
+            <p class="premium-empty-desc">There are no carrier records matching your search or current view.</p>
+            <div class="row w-100 justify-content-center mt-2">
+                <div class="col-auto">
+                    <button class="auth-secondary-btn px-4" @onclick="ReloadData">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
         </div>
     }
 </div>

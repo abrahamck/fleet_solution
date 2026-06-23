@@ -1,5 +1,6 @@
 @namespace appfleet_nexus_ui.Components
 @using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
 
 <div class="mb-3">
     @if (!string.IsNullOrEmpty(Title))
@@ -8,9 +9,10 @@
     }
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="text-muted small mb-2 d-block">@Label</label>
+        <label for="@_inputId" class="text-muted small mb-2 d-block">@Label</label>
     }
-    <input value="@Value" 
+    <input id="@_inputId"
+           value="@Value" 
            @oninput="OnInput"
            class="auth-input" 
            placeholder="@Placeholder" 
@@ -19,19 +21,20 @@
            autocapitalize="@Autocapitalize"
            autocorrect="@Autocorrect"
            disabled="@Disabled"
+           aria-invalid="@(HasError ? "true" : "false")"
+           aria-describedby="@(HasError ? $"{_inputId}-error" : null)"
            @attributes="AdditionalAttributes" />
     
-    @if (!string.IsNullOrEmpty(Error))
+    @if (HasError)
     {
-        <span class="auth-validation-msg">@Error</span>
-    }
-    else if (For != null)
-    {
-        <ValidationMessage For="@For" class="auth-validation-msg" />
+        <span id="@($"{_inputId}-error")" class="auth-validation-msg" role="alert">@ErrorMessage</span>
     }
 </div>
 
 @code {
+    [CascadingParameter] private EditContext? EditContext { get; set; }
+
+    [Parameter] public string? Id { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? Label { get; set; }
     [Parameter] public string? Placeholder { get; set; }
@@ -49,9 +52,40 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    private string _inputId = default!;
+    private FieldIdentifier _fieldIdentifier;
+
+    protected override void OnInitialized()
+    {
+        _inputId = Id ?? $"input-{Guid.NewGuid().ToString("N")[..8]}";
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (EditContext != null && For != null)
+        {
+            _fieldIdentifier = FieldIdentifier.Create(For);
+        }
+    }
+
+    private bool HasError => !string.IsNullOrEmpty(Error) || 
+                            (EditContext != null && For != null && EditContext.GetValidationMessages(_fieldIdentifier).Any());
+   
+    private string? ErrorMessage => !string.IsNullOrEmpty(Error) 
+        ? Error 
+        : (EditContext != null && For != null ? EditContext.GetValidationMessages(_fieldIdentifier).FirstOrDefault() : null);
+
     private Task OnInput(ChangeEventArgs e)
     {
         Value = e.Value?.ToString();
-        return ValueChanged.InvokeAsync(Value);
+        var task = ValueChanged.InvokeAsync(Value);
+        
+        // Notify edit context of field change to trigger validation
+        if (EditContext != null && For != null)
+        {
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
+        }
+        
+        return task;
     }
 }

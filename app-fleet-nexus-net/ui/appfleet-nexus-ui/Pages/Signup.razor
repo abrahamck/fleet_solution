@@ -1,5 +1,9 @@
 @page "/signup"
 @using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+@using appfleet_nexus_ui.Models
+@using appfleet_nexus_ui.Components
+@implements IDisposable
 @inject HttpClient Http
 @inject CustomAuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
@@ -8,7 +12,7 @@
 <PageTitle>Create Account - FleetNexus</PageTitle>
 
 <div class="auth-wrapper">
-    <div class="auth-card" style="max-width: 480px;">
+    <div class="auth-card">
         <div class="text-center mb-4">
             <h2 class="auth-title mb-2">Get Started</h2>
             <p class="auth-subtitle">Create a free account for your fleet</p>
@@ -37,7 +41,7 @@
             </div>
         }
 
-        <EditForm Model="_signupModel">
+        <EditForm EditContext="_editContext">
             <DataAnnotationsValidator />
 
             @if (_currentStep == 1)
@@ -53,6 +57,7 @@
                                InputMode="email"
                                Autocapitalize="none"
                                Autocorrect="off"
+                               autocomplete="username email"
                                Error="@_emailError"
                                @onkeyup="HandleKeyUp" />
                 </div>
@@ -66,6 +71,7 @@
                                Title="What is your first name?"
                                Label="We'll use this to personalize your experience."
                                Placeholder="Jane" 
+                               autocomplete="given-name"
                                Error="@_firstNameError"
                                @onkeyup="HandleKeyUp" />
                 </div>
@@ -79,6 +85,7 @@
                                Title="What is your last name?"
                                Label="Please enter your last name for profile records."
                                Placeholder="Doe" 
+                               autocomplete="family-name"
                                Error="@_lastNameError"
                                @onkeyup="HandleKeyUp" />
                 </div>
@@ -93,6 +100,7 @@
                                Label="Make sure it's at least 6 characters long."
                                Placeholder="Minimum 6 characters" 
                                Type="password"
+                               autocomplete="new-password"
                                Error="@_passwordError"
                                @onkeyup="HandleKeyUp" />
                 </div>
@@ -107,6 +115,7 @@
                                Label="Please re-type your password to confirm."
                                Placeholder="Re-enter password" 
                                Type="password"
+                               autocomplete="new-password"
                                Disabled="@_isSubmitting"
                                Error="@_confirmPasswordError"
                                @onkeyup="HandleKeyUp" />
@@ -116,8 +125,7 @@
             <!-- Navigation Buttons -->
             <div class="row g-2 mt-4">
                 <div class="col-6">
-                    <button type="button" class="btn btn-outline-secondary w-100 h-100" 
-                            style="border-radius: 10px; min-height: 48px;" 
+                    <button type="button" class="auth-secondary-btn w-100" 
                             @onclick="GoBack" 
                             disabled="@(_currentStep == 1 || _isSubmitting)">
                         <i class="bi bi-arrow-left me-1"></i> Previous
@@ -161,6 +169,7 @@
 
 @code {
     private readonly SignupModel _signupModel = new();
+    private EditContext _editContext = default!;
     private int _currentStep = 1;
     private bool _isSubmitting;
     private string? _errorMessage;
@@ -172,10 +181,17 @@
     private string? _passwordError;
     private string? _confirmPasswordError;
 
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_signupModel);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            await RestoreStateAsync();
             await FocusStepInput();
         }
     }
@@ -220,6 +236,64 @@
         }
     }
 
+    private async void HandleFieldChanged(object? sender, FieldChangedEventArgs e)
+    {
+        // Run step-specific validation as fields change
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.Email)) ValidateStep1();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.FirstName)) ValidateStep2();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.LastName)) ValidateStep3();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.Password)) ValidateStep4();
+        if (e.FieldIdentifier.FieldName == nameof(SignupModel.ConfirmPassword)) ValidateStep5();
+        
+        await SaveStateAsync();
+        StateHasChanged();
+    }
+
+    private async Task SaveStateAsync()
+    {
+        try
+        {
+            var state = new SignupState(_currentStep, _signupModel.Email, _signupModel.FirstName, _signupModel.LastName);
+            var json = JsonSerializer.Serialize(state);
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "signup_state", json);
+        }
+        catch
+        {
+            // Fail silently
+        }
+    }
+
+    private async Task RestoreStateAsync()
+    {
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string?>("sessionStorage.getItem", "signup_state");
+            if (!string.IsNullOrEmpty(json))
+            {
+                var state = JsonSerializer.Deserialize<SignupState>(json);
+                if (state != null)
+                {
+                    _currentStep = state.CurrentStep;
+                    _signupModel.Email = state.Email ?? string.Empty;
+                    _signupModel.FirstName = state.FirstName ?? string.Empty;
+                    _signupModel.LastName = state.LastName ?? string.Empty;
+
+                    // Hydrate field validation messages
+                    if (_currentStep >= 2) ValidateStep1();
+                    if (_currentStep >= 3) ValidateStep2();
+                    if (_currentStep >= 4) ValidateStep3();
+                    if (_currentStep >= 5) ValidateStep4();
+
+                    StateHasChanged();
+                }
+            }
+        }
+        catch
+        {
+            // Fail silently
+        }
+    }
+
     private async Task GoNext()
     {
         bool isValid = _currentStep switch
@@ -234,6 +308,7 @@
         if (isValid)
         {
             _currentStep++;
+            await SaveStateAsync();
             StateHasChanged();
             await FocusStepInput();
         }
@@ -244,75 +319,30 @@
         if (_currentStep > 1)
         {
             _currentStep--;
+            await SaveStateAsync();
             StateHasChanged();
             await FocusStepInput();
         }
     }
 
-    private bool ValidateStep1()
+    private bool ValidateField<T>(T value, string propertyName, ref string? errorField)
     {
-        _emailError = null;
+        errorField = null;
         var results = new List<ValidationResult>();
-        var context = new ValidationContext(_signupModel) { MemberName = nameof(SignupModel.Email) };
-        bool isValid = Validator.TryValidateProperty(_signupModel.Email, context, results);
+        var context = new ValidationContext(_signupModel) { MemberName = propertyName };
+        bool isValid = Validator.TryValidateProperty(value, context, results);
         if (!isValid)
         {
-            _emailError = results.FirstOrDefault()?.ErrorMessage;
+            errorField = results.FirstOrDefault()?.ErrorMessage;
         }
         return isValid;
     }
 
-    private bool ValidateStep2()
-    {
-        _firstNameError = null;
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(_signupModel) { MemberName = nameof(SignupModel.FirstName) };
-        bool isValid = Validator.TryValidateProperty(_signupModel.FirstName, context, results);
-        if (!isValid)
-        {
-            _firstNameError = results.FirstOrDefault()?.ErrorMessage;
-        }
-        return isValid;
-    }
-
-    private bool ValidateStep3()
-    {
-        _lastNameError = null;
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(_signupModel) { MemberName = nameof(SignupModel.LastName) };
-        bool isValid = Validator.TryValidateProperty(_signupModel.LastName, context, results);
-        if (!isValid)
-        {
-            _lastNameError = results.FirstOrDefault()?.ErrorMessage;
-        }
-        return isValid;
-    }
-
-    private bool ValidateStep4()
-    {
-        _passwordError = null;
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(_signupModel) { MemberName = nameof(SignupModel.Password) };
-        bool isValid = Validator.TryValidateProperty(_signupModel.Password, context, results);
-        if (!isValid)
-        {
-            _passwordError = results.FirstOrDefault()?.ErrorMessage;
-        }
-        return isValid;
-    }
-
-    private bool ValidateStep5()
-    {
-        _confirmPasswordError = null;
-        var results = new List<ValidationResult>();
-        var context = new ValidationContext(_signupModel) { MemberName = nameof(SignupModel.ConfirmPassword) };
-        bool isValid = Validator.TryValidateProperty(_signupModel.ConfirmPassword, context, results);
-        if (!isValid)
-        {
-            _confirmPasswordError = results.FirstOrDefault()?.ErrorMessage;
-        }
-        return isValid;
-    }
+    private bool ValidateStep1() => ValidateField(_signupModel.Email, nameof(SignupModel.Email), ref _emailError);
+    private bool ValidateStep2() => ValidateField(_signupModel.FirstName, nameof(SignupModel.FirstName), ref _firstNameError);
+    private bool ValidateStep3() => ValidateField(_signupModel.LastName, nameof(SignupModel.LastName), ref _lastNameError);
+    private bool ValidateStep4() => ValidateField(_signupModel.Password, nameof(SignupModel.Password), ref _passwordError);
+    private bool ValidateStep5() => ValidateField(_signupModel.ConfirmPassword, nameof(SignupModel.ConfirmPassword), ref _confirmPasswordError);
 
     private async Task HandleSignup()
     {
@@ -339,6 +369,13 @@
                 var authResult = await response.Content.ReadFromJsonAsync<AuthResponse>();
                 if (authResult != null)
                 {
+                    // Clear state on success
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "signup_state");
+                    }
+                    catch { }
+
                     var session = new UserSession(
                         authResult.AccessToken,
                         authResult.RefreshToken,
@@ -383,4 +420,14 @@
             _isSubmitting = false;
         }
     }
+
+    public void Dispose()
+    {
+        if (_editContext != null)
+        {
+            _editContext.OnFieldChanged -= HandleFieldChanged;
+        }
+    }
+
+    private record SignupState(int CurrentStep, string? Email, string? FirstName, string? LastName);
 }
