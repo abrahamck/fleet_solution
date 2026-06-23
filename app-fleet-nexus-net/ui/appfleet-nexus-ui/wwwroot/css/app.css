@@ -543,3 +543,8 @@ code {
     background-color: var(--brand-cobalt) !important;
     color: var(--brand-white) !important;
 }
+
+.auth-logo {
+    height: 48px;
+    width: auto;
+}
