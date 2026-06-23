@@ -2,6 +2,9 @@
 
 This document provides step-by-step task specifications for implementing the Signup/Login workflow in the `appfleet-nexus-ui` Blazor WebAssembly project.
 
+> [!NOTE]
+> This implementation establishes the **Multi-Step Input Wizard Pattern** detailed in [SignupLoginImplementationPlan.md](file:///c:/Learn/fleet_solution/app-fleet-nexus-net/docs/SignupLoginImplementationPlan.md). This pattern must be followed for any feature involving multiple input items.
+
 ---
 
 ## Checklist & Progress Tracker

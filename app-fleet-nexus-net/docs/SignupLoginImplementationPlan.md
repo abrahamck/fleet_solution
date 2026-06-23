@@ -46,6 +46,46 @@ To ensure a high-fidelity mobile experience, the implementation will strictly fo
 
 ---
 
+## Reusable Design Pattern: Multi-Step Input Wizard
+For any user interaction flow that requires collecting multiple inputs (e.g. driver onboarding, vehicle profiling, contact entry, or settings configuration), FleetNexus uses a unified **Multi-Step Input Wizard Pattern** to optimize mobile and desktop usability.
+
+### Core Pillars of the Pattern
+
+1. **Incremental Disclosure (Wizard Flow)**
+   - Distribute complex questionnaires or forms into sequential steps rather than presenting all fields at once.
+   - Limit each step to **one input item** (or a single cohesive logical group) to minimize cognitive load, especially on small touch screens.
+
+2. **No-Label Progress Tracking (Sleek Colored Dots)**
+   - Use a minimalistic, horizontal step progress bar comprised of empty dots connected by thin lines.
+   - Avoid cluttered step numbers or wordy step titles in the header indicator.
+   - Dots dynamically update:
+     - **Active**: Brand highlight color (e.g. blue), scaled larger, with a soft glow ring.
+     - **Completed**: Success color (e.g. green).
+     - **Pending**: Neutral inactive grey.
+
+3. **Unified Simplified Form Component**
+   - Bind inputs using a clean, reusable wrapper component containing exactly:
+     - **Title**: Action prompt (e.g. *"What is your email address?"*).
+     - **Label Description**: Subtitle explaining context (e.g. *"We will use this address to log you in."*).
+     - **Single Input Field**: Auto-focused, styled text input.
+     - **Dynamic Error Placement**: Inline validation warnings directly below the control.
+
+4. **Progressive validation**
+   - Validate only the current step's active properties before advancing.
+   - Prevent the user from proceeding if the active inputs fail model validation rules.
+
+5. **Adaptive Navigation Controls**
+   - Provide explicit **Previous** and **Next** buttons at the bottom of the card:
+     - The **Previous** button is disabled on Step 1.
+     - The **Next** button dynamically validates the active properties.
+     - On the final step, the **Next** button text transforms into **Submit**.
+   - Listen for "Enter" keyups on inputs to automatically trigger the next action or final submission.
+
+6. **Automatic Focus Management**
+   - When entering or returning to a step, automatically focus the primary input field of that step to enable fast typing.
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Authentication Infrastructure
