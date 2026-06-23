@@ -1,12 +1,12 @@
 @inject CustomAuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
 
-<div class="top-row ps-3 navbar navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">
-            <i class="bi bi-truck"></i> FleetNexus
+<div class="top-row ps-0 pe-4 py-0 navbar navbar-light bg-white border-bottom">
+    <div class="container-fluid px-0 d-flex align-items-center justify-content-between">
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <img src="images/logo.png" alt="FleetNexus Logo" class="navbar-brand-logo" />
         </a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+        <button title="Navigation menu" class="navbar-toggler border-0" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>

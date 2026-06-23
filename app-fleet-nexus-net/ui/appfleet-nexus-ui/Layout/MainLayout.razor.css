@@ -17,11 +17,17 @@ main {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid #e2e8f0;
-    justify-content: flex-end;
+    justify-content: space-between;
     height: 3.5rem;
     display: flex;
     align-items: center;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+}
+
+.main-brand-name {
+    height: 3.5rem;
+    width: auto;
+    display: block;
 }
 
     .top-row ::deep a, .top-row ::deep .btn-link {
