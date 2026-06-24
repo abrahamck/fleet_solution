@@ -1,61 +1,350 @@
 @page "/"
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
 
 <PageTitle>Home - FleetNexus</PageTitle>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="text-center mb-5">
-                <h1 class="display-4 fw-bold">Welcome to FleetNexus</h1>
-                <p class="lead text-muted">The future for small and medium fleets</p>
-            </div>
-
-            <div class="row mt-5">
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body text-center">
-                            <div class="mb-3">
-                                <i class="bi bi-truck display-4 text-primary"></i>
-                            </div>
-                            <h5 class="card-title">Fleet Management</h5>
-                            <p class="card-text text-muted">Manage your fleet efficiently with our comprehensive tools and analytics.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body text-center">
-                            <div class="mb-3">
-                                <i class="bi bi-bar-chart display-4 text-success"></i>
-                            </div>
-                            <h5 class="card-title">Analytics</h5>
-                            <p class="card-text text-muted">Get insights into your fleet's performance with detailed reports and metrics.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-5 mb-5">
-                <a href="/carriers" class="btn btn-primary btn-lg">
-                    View Top Carriers
-                </a>
-            </div>
-
-            <div class="row mt-5">
-                <div class="col-12">
-                    <div class="card bg-light border-0">
-                        <div class="card-body">
-                            <h5 class="card-title">About FleetNexus</h5>
-                            <p class="card-text">
-                                FleetNexus is a modern fleet management solution designed for small and medium-sized businesses.
-                                Built with the latest .NET technologies and industry best practices, FleetNexus helps you manage
-                                your fleet more efficiently, reduce costs, and improve operational efficiency.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+<div class="container py-4">
+    @if (!_isInitialized)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- Hero Section -->
+        <div class="landing-hero text-center animate-fade-in">
+            <div class="mb-4">
+                <img src="images/logo.png" alt="FleetNexus Logo" style="height: 64px; width: auto; filter: drop-shadow(0 4px 12px rgba(26, 115, 232, 0.15));" />
+            </div>
+            <h1 class="landing-headline">The ultimate fleet companion is being built. <span class="text-primary">Shape it with us.</span></h1>
+
+            @if (_currentStep == 1)
+            {
+                <p class="landing-subheadline text-center max-width-800 mx-auto">
+                    We’re building FleetNexus specifically for small businesses that need simple, powerful vehicle management without the enterprise price tag. Join our Alpha today, tell us your biggest roadblock, and lock in a free tier for life. Click <a href="javascript:void(0)" @onclick="GoToStep2" class="text-primary fw-bold text-decoration-underline">here</a> to proceed
+                </p>
+            }
+            else if (_currentStep == 2)
+            {
+                <div class="landing-card text-start animate-fade-in">
+                    <h3 class="fw-bold mb-4 text-center">What is your biggest fleet roadblock?</h3>
+                    
+                    <div class="roadblock-grid">
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("High Costs") ? "selected" : "")" @onclick='() => ToggleRoadblock("High Costs")'>
+                            <div class="roadblock-icon-wrapper text-danger">💸</div>
+                            <div class="roadblock-title">High Costs</div>
+                            <div class="roadblock-desc">Existing software is too expensive or bloated with enterprise features you don't use.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Complexity") ? "selected" : "")" @onclick='() => ToggleRoadblock("Complexity")'>
+                            <div class="roadblock-icon-wrapper text-warning">🌀</div>
+                            <div class="roadblock-title">Complexity</div>
+                            <div class="roadblock-desc">Interface is hard to navigate and difficult to train team members and drivers on.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Maintenance") ? "selected" : "")" @onclick='() => ToggleRoadblock("Maintenance")'>
+                            <div class="roadblock-icon-wrapper text-primary">🔧</div>
+                            <div class="roadblock-title">Maintenance</div>
+                            <div class="roadblock-desc">Tracking oil changes, repairs, service schedules, and downtime is a headache.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Fuel Tracking") ? "selected" : "")" @onclick='() => ToggleRoadblock("Fuel Tracking")'>
+                            <div class="roadblock-icon-wrapper text-success">⛽</div>
+                            <div class="roadblock-title">Fuel Tracking</div>
+                            <div class="roadblock-desc">Messy manual receipts, tracking mileage, and preventing fuel card leakage.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Driver Safety") ? "selected" : "")" @onclick='() => ToggleRoadblock("Driver Safety")'>
+                            <div class="roadblock-icon-wrapper text-info">🛑</div>
+                            <div class="roadblock-title">Driver Safety</div>
+                            <div class="roadblock-desc">Monitoring driver behaviors like speeding or harsh braking to reduce risks.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Telematics") ? "selected" : "")" @onclick='() => ToggleRoadblock("Telematics")'>
+                            <div class="roadblock-icon-wrapper text-secondary">📡</div>
+                            <div class="roadblock-title">Telematics/GPS</div>
+                            <div class="roadblock-desc">Installing and paying for complex GPS tracking devices across all your vehicles.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Recalls") ? "selected" : "")" @onclick='() => ToggleRoadblock("Recalls")'>
+                            <div class="roadblock-icon-wrapper text-warning">⚠️</div>
+                            <div class="roadblock-title">Manufacturer Recalls</div>
+                            <div class="roadblock-desc">Missing critical safety recall notices and service updates for your vehicles.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Registration Renewals") ? "selected" : "")" @onclick='() => ToggleRoadblock("Registration Renewals")'>
+                            <div class="roadblock-icon-wrapper text-primary">📅</div>
+                            <div class="roadblock-title">Registration Renewals</div>
+                            <div class="roadblock-desc">Missing vehicle registration renewals, inspections, or emissions test dates.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Insurance Tracking") ? "selected" : "")" @onclick='() => ToggleRoadblock("Insurance Tracking")'>
+                            <div class="roadblock-icon-wrapper text-success">🪪</div>
+                            <div class="roadblock-title">Insurance Tracking</div>
+                            <div class="roadblock-desc">Keeping track of active insurance cards, policies, and renewing compliance documents.</div>
+                        </div>
+
+                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Other") ? "selected" : "")" @onclick='() => ToggleRoadblock("Other")'>
+                            <div class="roadblock-icon-wrapper text-muted">📝</div>
+                            <div class="roadblock-title">Other Challenge</div>
+                            <div class="roadblock-desc">Something else is your biggest pain point? Select this and tell us about it below.</div>
+                        </div>
+                    </div>
+
+                    @if (_selectedRoadblocks.Contains("Other"))
+                    {
+                        <div class="mb-4 mx-auto" style="max-width: 500px;">
+                            <label for="customRoadblock" class="form-label fw-semibold">Specify your main roadblock:</label>
+                            <textarea id="customRoadblock" class="form-control" rows="2" placeholder="e.g. Managing driver shifts, dispatch logs, etc." @bind="_customRoadblock"></textarea>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_validationError))
+                    {
+                        <div class="text-danger text-center mb-3 fw-semibold animate-fade-in">
+                            <i class="bi bi-exclamation-circle-fill me-1"></i> @_validationError
+                        </div>
+                    }
+
+                    <div class="text-center">
+                        <button class="btn-pulse" @onclick="GoToStep3">
+                            <span>Join Alpha</span>
+                        </button>
+                    </div>
+                </div>
+            }
+            else if (_currentStep == 3)
+            {
+                <div class="landing-card text-center animate-fade-in">
+                    <div class="alpha-email-container py-3">
+                        <h3 class="fw-bold mb-2">Secure your Lifetime Free Tier</h3>
+                        <p class="text-muted mb-4">Early Alpha users get a lifetime free account tier when we launch.</p>
+                        
+                        <div class="input-glow-group">
+                            <input type="email" class="input-glow" placeholder="Enter your business email" @bind="_email" @bind:event="oninput" @onkeydown="HandleKeyDown" />
+                            <button class="btn-pulse" @onclick="RegisterAlpha" disabled="@_isSubmitting">
+                                @if (_isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    <span>Submitting...</span>
+                                }
+                                else
+                                {
+                                    <span>Submit</span>
+                                }
+                            </button>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(_emailError))
+                        {
+                            <div class="text-danger text-center mt-2 fw-semibold animate-fade-in">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i> @_emailError
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else if (_currentStep == 4)
+            {
+                <!-- Success State -->
+                <div class="landing-card text-center py-5 animate-fade-in">
+                    <div class="mb-3">
+                        <i class="bi bi-patch-check-fill animated-success-icon"></i>
+                    </div>
+                    <h2 class="fw-bold text-success mb-2">Alpha Access Secured!</h2>
+                    <div class="mb-3 animate-pulse">
+                        <span class="badge-glow-locked">
+                            <i class="bi bi-gift-fill"></i> Free Tier for Life locked
+                        </span>
+                    </div>
+                    <p class="lead max-width-600 mx-auto text-muted">
+                        Thank you for registering with <strong>@_email</strong>. 
+                        We've registered your biggest roadblocks: <em>"@GetDisplayRoadblocks()"</em>.
+                    </p>
+                    <div class="alert alert-modern alert-modern-info max-width-500 mx-auto mt-4 text-start" style="max-width: 500px;">
+                        <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                        <div>
+                            <strong>What's next?</strong> We are actively building FleetNexus. You will receive updates, alpha builds, and your lifetime account instructions at this email address.
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm mt-4" @onclick="ResetForm">
+                        <i class="bi bi-arrow-repeat me-1"></i> Submit another roadblock / email
+                    </button>
+                </div>
+            }
+        </div>
+    }
 </div>
+
+@code {
+    private bool _isInitialized = false;
+    private bool _isRegistered = false;
+    private int _currentStep = 1;
+    private List<string> _selectedRoadblocks = new();
+    private string _customRoadblock = "";
+    private string _email = "";
+    private string _emailError = "";
+    private string _validationError = "";
+    private bool _isSubmitting = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var registeredStr = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "fleetnexus_alpha_registered");
+                if (registeredStr == "true")
+                {
+                    _isRegistered = true;
+                    _currentStep = 4;
+                    _email = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "fleetnexus_alpha_email") ?? "";
+                    var roadblockStr = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "fleetnexus_alpha_roadblock") ?? "";
+                    if (!string.IsNullOrEmpty(roadblockStr))
+                    {
+                        _selectedRoadblocks = roadblockStr.Split(", ", StringSplitOptions.RemoveEmptyEntries).ToList();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading from localStorage: " + ex.Message);
+            }
+
+            _isInitialized = true;
+            StateHasChanged();
+        }
+    }
+
+    private void GoToStep2()
+    {
+        _currentStep = 2;
+        _validationError = "";
+    }
+
+    private void ToggleRoadblock(string roadblock)
+    {
+        if (_selectedRoadblocks.Contains(roadblock))
+        {
+            _selectedRoadblocks.Remove(roadblock);
+        }
+        else
+        {
+            _selectedRoadblocks.Add(roadblock);
+        }
+        _validationError = "";
+    }
+
+    private void GoToStep3()
+    {
+        if (_selectedRoadblocks.Count == 0)
+        {
+            _validationError = "Please select at least one roadblock first!";
+            return;
+        }
+
+        if (_selectedRoadblocks.Contains("Other") && string.IsNullOrWhiteSpace(_customRoadblock))
+        {
+            _validationError = "Please specify your custom roadblock.";
+            return;
+        }
+
+        _currentStep = 3;
+        _emailError = "";
+    }
+
+    private async Task HandleKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await RegisterAlpha();
+        }
+    }
+
+    private string GetDisplayRoadblocks()
+    {
+        return string.Join(", ", _selectedRoadblocks.Select(r => r == "Other" ? (string.IsNullOrEmpty(_customRoadblock) ? "Custom Roadblock" : _customRoadblock) : r));
+    }
+
+    private async Task RegisterAlpha()
+    {
+        _emailError = "";
+
+        if (string.IsNullOrWhiteSpace(_email) || !_email.Contains("@") || !_email.Contains("."))
+        {
+            _emailError = "Please enter a valid business email address.";
+            return;
+        }
+
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var request = new {
+                Email = _email,
+                Roadblocks = _selectedRoadblocks,
+                CustomRoadblock = _customRoadblock
+            };
+
+            var response = await Http.PostAsJsonAsync("api/alpha/register", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var roadblockValue = GetDisplayRoadblocks();
+
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "fleetnexus_alpha_registered", "true");
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "fleetnexus_alpha_email", _email);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "fleetnexus_alpha_roadblock", roadblockValue);
+
+                _isRegistered = true;
+                _currentStep = 4;
+            }
+            else
+            {
+                var errorObj = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                _emailError = errorObj?.Error ?? "Unable to submit your registration. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _emailError = "A network error occurred. Please check your connection.";
+            Console.WriteLine("Error during alpha registration: " + ex.Message);
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private class ErrorResponse { public string? Error { get; set; } }
+
+    private async Task ResetForm()
+    {
+        _isRegistered = false;
+        _currentStep = 1;
+        _email = "";
+        _selectedRoadblocks.Clear();
+        _customRoadblock = "";
+        _emailError = "";
+        _validationError = "";
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "fleetnexus_alpha_registered");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "fleetnexus_alpha_email");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "fleetnexus_alpha_roadblock");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error clearing localStorage: " + ex.Message);
+        }
+
+        StateHasChanged();
+    }
+}
