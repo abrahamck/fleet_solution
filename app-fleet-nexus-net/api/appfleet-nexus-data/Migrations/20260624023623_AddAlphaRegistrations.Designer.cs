@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using AppFleetNexus.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AppFleetNexus.Data.Migrations
 {
     [DbContext(typeof(FleetNexusDbContext))]
-    partial class FleetNexusDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624023623_AddAlphaRegistrations")]
+    partial class AddAlphaRegistrations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

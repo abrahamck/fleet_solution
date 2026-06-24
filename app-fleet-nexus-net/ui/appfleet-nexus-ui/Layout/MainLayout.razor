@@ -3,9 +3,13 @@
 @inject CustomAuthenticationStateProvider AuthProvider
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    <AuthorizeView>
+        <Authorized>
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+        </Authorized>
+    </AuthorizeView>
 
     <main>
         <div class="top-row ps-0 pe-4">

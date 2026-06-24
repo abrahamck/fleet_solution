@@ -28,6 +28,7 @@ public class FleetNexusDbContext : DbContext
     public DbSet<TenantUser> TenantUsers { get; set; }
     public DbSet<Contact> Contacts { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
+    public DbSet<AlphaRegistration> AlphaRegistrations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +47,16 @@ public class FleetNexusDbContext : DbContext
         modelBuilder.Entity<TenantUser>().ToTable("tenant_users");
         modelBuilder.Entity<Contact>().ToTable("contacts");
         modelBuilder.Entity<Vehicle>().ToTable("vehicles");
+
+        modelBuilder.Entity<AlphaRegistration>(entity =>
+        {
+            entity.ToTable("alpha_registrations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.CreatedAt);
+        });
 
         // ─── TenantUser composite key ───
         modelBuilder.Entity<TenantUser>()
