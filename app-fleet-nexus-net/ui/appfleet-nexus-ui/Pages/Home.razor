@@ -15,174 +15,503 @@
     }
     else
     {
-        <!-- Hero Section -->
-        <div class="landing-hero text-center animate-fade-in">
-            <div class="mb-4">
-                <img src="images/logo.png" alt="FleetNexus Logo" style="height: 64px; width: auto; filter: drop-shadow(0 4px 12px rgba(26, 115, 232, 0.15));" />
-            </div>
-            <h1 class="landing-headline">The ultimate fleet companion is being built. <span class="text-primary">Shape it with us.</span></h1>
-
-            @if (_currentStep == 1)
-            {
-                <p class="landing-subheadline text-center max-width-800 mx-auto">
-                    We’re building FleetNexus specifically for small businesses that need simple, powerful vehicle management without the enterprise price tag. Join our Alpha today, tell us your biggest roadblock, and lock in a free tier for life. Click <a href="javascript:void(0)" @onclick="GoToStep2" class="text-primary fw-bold text-decoration-underline">here</a> to proceed
-                </p>
-            }
-            else if (_currentStep == 2)
-            {
-                <div class="landing-card text-start animate-fade-in">
-                    <h3 class="fw-bold mb-4 text-center">What is your biggest fleet roadblock?</h3>
-                    
-                    <div class="roadblock-grid">
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("High Costs") ? "selected" : "")" @onclick='() => ToggleRoadblock("High Costs")'>
-                            <div class="roadblock-icon-wrapper text-danger">💸</div>
-                            <div class="roadblock-title">High Costs</div>
-                            <div class="roadblock-desc">Existing software is too expensive or bloated with enterprise features you don't use.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Complexity") ? "selected" : "")" @onclick='() => ToggleRoadblock("Complexity")'>
-                            <div class="roadblock-icon-wrapper text-warning">🌀</div>
-                            <div class="roadblock-title">Complexity</div>
-                            <div class="roadblock-desc">Interface is hard to navigate and difficult to train team members and drivers on.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Maintenance") ? "selected" : "")" @onclick='() => ToggleRoadblock("Maintenance")'>
-                            <div class="roadblock-icon-wrapper text-primary">🔧</div>
-                            <div class="roadblock-title">Maintenance</div>
-                            <div class="roadblock-desc">Tracking oil changes, repairs, service schedules, and downtime is a headache.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Fuel Tracking") ? "selected" : "")" @onclick='() => ToggleRoadblock("Fuel Tracking")'>
-                            <div class="roadblock-icon-wrapper text-success">⛽</div>
-                            <div class="roadblock-title">Fuel Tracking</div>
-                            <div class="roadblock-desc">Messy manual receipts, tracking mileage, and preventing fuel card leakage.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Driver Safety") ? "selected" : "")" @onclick='() => ToggleRoadblock("Driver Safety")'>
-                            <div class="roadblock-icon-wrapper text-info">🛑</div>
-                            <div class="roadblock-title">Driver Safety</div>
-                            <div class="roadblock-desc">Monitoring driver behaviors like speeding or harsh braking to reduce risks.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Telematics") ? "selected" : "")" @onclick='() => ToggleRoadblock("Telematics")'>
-                            <div class="roadblock-icon-wrapper text-secondary">📡</div>
-                            <div class="roadblock-title">Telematics/GPS</div>
-                            <div class="roadblock-desc">Installing and paying for complex GPS tracking devices across all your vehicles.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Recalls") ? "selected" : "")" @onclick='() => ToggleRoadblock("Recalls")'>
-                            <div class="roadblock-icon-wrapper text-warning">⚠️</div>
-                            <div class="roadblock-title">Manufacturer Recalls</div>
-                            <div class="roadblock-desc">Missing critical safety recall notices and service updates for your vehicles.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Registration Renewals") ? "selected" : "")" @onclick='() => ToggleRoadblock("Registration Renewals")'>
-                            <div class="roadblock-icon-wrapper text-primary">📅</div>
-                            <div class="roadblock-title">Registration Renewals</div>
-                            <div class="roadblock-desc">Missing vehicle registration renewals, inspections, or emissions test dates.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Insurance Tracking") ? "selected" : "")" @onclick='() => ToggleRoadblock("Insurance Tracking")'>
-                            <div class="roadblock-icon-wrapper text-success">🪪</div>
-                            <div class="roadblock-title">Insurance Tracking</div>
-                            <div class="roadblock-desc">Keeping track of active insurance cards, policies, and renewing compliance documents.</div>
-                        </div>
-
-                        <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Other") ? "selected" : "")" @onclick='() => ToggleRoadblock("Other")'>
-                            <div class="roadblock-icon-wrapper text-muted">📝</div>
-                            <div class="roadblock-title">Other Challenge</div>
-                            <div class="roadblock-desc">Something else is your biggest pain point? Select this and tell us about it below.</div>
-                        </div>
+        <AuthorizeView>
+            <NotAuthorized>
+                <!-- Hero Section -->
+                <div class="landing-hero text-center animate-fade-in">
+                    <div class="mb-4">
+                        <img src="images/logo.png" alt="FleetNexus Logo" style="height: 64px; width: auto; filter: drop-shadow(0 4px 12px rgba(26, 115, 232, 0.15));" />
                     </div>
+                    <h1 class="landing-headline">The ultimate fleet companion is being built. <span class="text-primary">Shape it with us.</span></h1>
 
-                    @if (_selectedRoadblocks.Contains("Other"))
+                    @if (_currentStep == 1)
                     {
-                        <div class="mb-4 mx-auto" style="max-width: 500px;">
-                            <label for="customRoadblock" class="form-label fw-semibold">Specify your main roadblock:</label>
-                            <textarea id="customRoadblock" class="form-control" rows="2" placeholder="e.g. Managing driver shifts, dispatch logs, etc." @bind="_customRoadblock"></textarea>
+                        <p class="landing-subheadline text-center max-width-800 mx-auto">
+                            We’re building FleetNexus specifically for small businesses that need simple, powerful vehicle management without the enterprise price tag. Join our Alpha today, tell us your biggest roadblock, and lock in a free tier for life. Click <a href="javascript:void(0)" @onclick="GoToStep2" class="text-primary fw-bold text-decoration-underline">here</a> to proceed
+                        </p>
+                    }
+                    else if (_currentStep == 2)
+                    {
+                        <div class="landing-card text-start animate-fade-in">
+                            <h3 class="fw-bold mb-4 text-center">What is your biggest fleet roadblock?</h3>
+                            
+                            <div class="roadblock-grid">
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("High Costs") ? "selected" : "")" @onclick='() => ToggleRoadblock("High Costs")'>
+                                    <div class="roadblock-icon-wrapper text-danger">💸</div>
+                                    <div class="roadblock-title">High Costs</div>
+                                    <div class="roadblock-desc">Existing software is too expensive or bloated with enterprise features you don't use.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Complexity") ? "selected" : "")" @onclick='() => ToggleRoadblock("Complexity")'>
+                                    <div class="roadblock-icon-wrapper text-warning">🌀</div>
+                                    <div class="roadblock-title">Complexity</div>
+                                    <div class="roadblock-desc">Interface is hard to navigate and difficult to train team members and drivers on.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Maintenance") ? "selected" : "")" @onclick='() => ToggleRoadblock("Maintenance")'>
+                                    <div class="roadblock-icon-wrapper text-primary">🔧</div>
+                                    <div class="roadblock-title">Maintenance</div>
+                                    <div class="roadblock-desc">Tracking oil changes, repairs, service schedules, and downtime is a headache.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Fuel Tracking") ? "selected" : "")" @onclick='() => ToggleRoadblock("Fuel Tracking")'>
+                                    <div class="roadblock-icon-wrapper text-success">⛽</div>
+                                    <div class="roadblock-title">Fuel Tracking</div>
+                                    <div class="roadblock-desc">Messy manual receipts, tracking mileage, and preventing fuel card leakage.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Driver Safety") ? "selected" : "")" @onclick='() => ToggleRoadblock("Driver Safety")'>
+                                    <div class="roadblock-icon-wrapper text-info">🛑</div>
+                                    <div class="roadblock-title">Driver Safety</div>
+                                    <div class="roadblock-desc">Monitoring driver behaviors like speeding or harsh braking to reduce risks.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Telematics") ? "selected" : "")" @onclick='() => ToggleRoadblock("Telematics")'>
+                                    <div class="roadblock-icon-wrapper text-secondary">📡</div>
+                                    <div class="roadblock-title">Telematics/GPS</div>
+                                    <div class="roadblock-desc">Installing and paying for complex GPS tracking devices across all your vehicles.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Recalls") ? "selected" : "")" @onclick='() => ToggleRoadblock("Recalls")'>
+                                    <div class="roadblock-icon-wrapper text-warning">⚠️</div>
+                                    <div class="roadblock-title">Manufacturer Recalls</div>
+                                    <div class="roadblock-desc">Missing critical safety recall notices and service updates for your vehicles.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Registration Renewals") ? "selected" : "")" @onclick='() => ToggleRoadblock("Registration Renewals")'>
+                                    <div class="roadblock-icon-wrapper text-primary">📅</div>
+                                    <div class="roadblock-title">Registration Renewals</div>
+                                    <div class="roadblock-desc">Missing vehicle registration renewals, inspections, or emissions test dates.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Insurance Tracking") ? "selected" : "")" @onclick='() => ToggleRoadblock("Insurance Tracking")'>
+                                    <div class="roadblock-icon-wrapper text-success">🪪</div>
+                                    <div class="roadblock-title">Insurance Tracking</div>
+                                    <div class="roadblock-desc">Keeping track of active insurance cards, policies, and renewing compliance documents.</div>
+                                </div>
+
+                                <div class="roadblock-option-card @(_selectedRoadblocks.Contains("Other") ? "selected" : "")" @onclick='() => ToggleRoadblock("Other")'>
+                                    <div class="roadblock-icon-wrapper text-muted">📝</div>
+                                    <div class="roadblock-title">Other Challenge</div>
+                                    <div class="roadblock-desc">Something else is your biggest pain point? Select this and tell us about it below.</div>
+                                </div>
+                            </div>
+
+                            @if (_selectedRoadblocks.Contains("Other"))
+                            {
+                                <div class="mb-4 mx-auto" style="max-width: 500px;">
+                                    <label for="customRoadblock" class="form-label fw-semibold">Specify your main roadblock:</label>
+                                    <textarea id="customRoadblock" class="form-control" rows="2" placeholder="e.g. Managing driver shifts, dispatch logs, etc." @bind="_customRoadblock"></textarea>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(_validationError))
+                            {
+                                <div class="text-danger text-center mb-3 fw-semibold animate-fade-in">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i> @_validationError
+                                </div>
+                            }
+
+                            <div class="text-center">
+                                <button class="btn-pulse" @onclick="GoToStep3">
+                                    <span>Join Alpha</span>
+                                </button>
+                            </div>
                         </div>
                     }
-
-                    @if (!string.IsNullOrEmpty(_validationError))
+                    else if (_currentStep == 3)
                     {
-                        <div class="text-danger text-center mb-3 fw-semibold animate-fade-in">
-                            <i class="bi bi-exclamation-circle-fill me-1"></i> @_validationError
-                        </div>
-                    }
+                        <div class="landing-card text-center animate-fade-in">
+                            <div class="alpha-email-container py-3">
+                                <h3 class="fw-bold mb-2">Secure your Lifetime Free Tier</h3>
+                                <p class="text-muted mb-4">Early Alpha users get a lifetime free account tier when we launch.</p>
+                                
+                                <div class="input-glow-group">
+                                    <input type="email" class="input-glow" placeholder="Enter your business email" @bind="_email" @bind:event="oninput" @onkeydown="HandleKeyDown" />
+                                    <button class="btn-pulse" @onclick="RegisterAlpha" disabled="@_isSubmitting">
+                                        @if (_isSubmitting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                            <span>Submitting...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Submit</span>
+                                        }
+                                    </button>
+                                </div>
 
-                    <div class="text-center">
-                        <button class="btn-pulse" @onclick="GoToStep3">
-                            <span>Join Alpha</span>
-                        </button>
-                    </div>
-                </div>
-            }
-            else if (_currentStep == 3)
-            {
-                <div class="landing-card text-center animate-fade-in">
-                    <div class="alpha-email-container py-3">
-                        <h3 class="fw-bold mb-2">Secure your Lifetime Free Tier</h3>
-                        <p class="text-muted mb-4">Early Alpha users get a lifetime free account tier when we launch.</p>
-                        
-                        <div class="input-glow-group">
-                            <input type="email" class="input-glow" placeholder="Enter your business email" @bind="_email" @bind:event="oninput" @onkeydown="HandleKeyDown" />
-                            <button class="btn-pulse" @onclick="RegisterAlpha" disabled="@_isSubmitting">
-                                @if (_isSubmitting)
+                                @if (!string.IsNullOrEmpty(_emailError))
                                 {
-                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                    <span>Submitting...</span>
+                                    <div class="text-danger text-center mt-2 fw-semibold animate-fade-in">
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i> @_emailError
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (_currentStep == 4)
+                    {
+                        <!-- Success State -->
+                        <div class="landing-card text-center py-5 animate-fade-in">
+                            <div class="mb-3">
+                                <i class="bi bi-patch-check-fill animated-success-icon"></i>
+                            </div>
+                            <h2 class="fw-bold text-success mb-2">Alpha Access Secured!</h2>
+                            <div class="mb-3 animate-pulse">
+                                <span class="badge-glow-locked">
+                                    <i class="bi bi-gift-fill"></i> Free Tier for Life locked
+                                </span>
+                            </div>
+                            <p class="lead max-width-600 mx-auto text-muted">
+                                Thank you for registering with <strong>@_email</strong>. 
+                                We've registered your biggest roadblocks: <em>"@GetDisplayRoadblocks()"</em>.
+                            </p>
+                            <div class="alert alert-modern alert-modern-info max-width-500 mx-auto mt-4 text-start" style="max-width: 500px;">
+                                <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                                <div>
+                                    <strong>What's next?</strong> We are actively building FleetNexus. You will receive updates, alpha builds, and your lifetime account instructions at this email address.
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm mt-4" @onclick="ResetForm">
+                                <i class="bi bi-arrow-repeat me-1"></i> Submit another roadblock / email
+                            </button>
+                        </div>
+                    }
+                </div>
+            </NotAuthorized>
+            <Authorized>
+                <div class="dashboard-container animate-fade-in">
+                    <!-- Header Section -->
+                    <div class="row align-items-center mb-4 g-3">
+                        <div class="col-sm">
+                            <h1 class="display-6 fw-bold text-dark mb-1">Fleet Dashboard</h1>
+                            <p class="text-muted mb-0">
+                                @if (_dashboardData != null)
+                                {
+                                    <span>Calculated: @_dashboardData.CalculatedAt.ToLocalTime().ToString("g")</span>
                                 }
                                 else
                                 {
-                                    <span>Submit</span>
+                                    <span>Loading metrics...</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-sm-auto">
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" @onclick="LoadDashboardData" disabled="@_isLoadingKpis">
+                                @if (_isLoadingKpis)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    <span>Refreshing...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    <span>Refresh Data</span>
                                 }
                             </button>
                         </div>
+                    </div>
 
-                        @if (!string.IsNullOrEmpty(_emailError))
-                        {
-                            <div class="text-danger text-center mt-2 fw-semibold animate-fade-in">
-                                <i class="bi bi-exclamation-circle-fill me-1"></i> @_emailError
+                    @if (!string.IsNullOrEmpty(_toastMessage))
+                    {
+                        <div class="alert alert-modern alert-modern-info mb-4 animate-fade-in" style="max-width: 700px; margin: 0 auto 1.5rem auto;">
+                            <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+                            <div class="d-flex justify-content-between w-100 align-items-center">
+                                <span>@_toastMessage</span>
+                                <button type="button" class="btn-close" style="font-size: 0.75rem;" @onclick="DismissToast"></button>
                             </div>
-                        }
-                    </div>
-                </div>
-            }
-            else if (_currentStep == 4)
-            {
-                <!-- Success State -->
-                <div class="landing-card text-center py-5 animate-fade-in">
-                    <div class="mb-3">
-                        <i class="bi bi-patch-check-fill animated-success-icon"></i>
-                    </div>
-                    <h2 class="fw-bold text-success mb-2">Alpha Access Secured!</h2>
-                    <div class="mb-3 animate-pulse">
-                        <span class="badge-glow-locked">
-                            <i class="bi bi-gift-fill"></i> Free Tier for Life locked
-                        </span>
-                    </div>
-                    <p class="lead max-width-600 mx-auto text-muted">
-                        Thank you for registering with <strong>@_email</strong>. 
-                        We've registered your biggest roadblocks: <em>"@GetDisplayRoadblocks()"</em>.
-                    </p>
-                    <div class="alert alert-modern alert-modern-info max-width-500 mx-auto mt-4 text-start" style="max-width: 500px;">
-                        <i class="bi bi-info-circle-fill text-primary fs-4"></i>
-                        <div>
-                            <strong>What's next?</strong> We are actively building FleetNexus. You will receive updates, alpha builds, and your lifetime account instructions at this email address.
                         </div>
-                    </div>
-                    <button class="btn btn-outline-secondary btn-sm mt-4" @onclick="ResetForm">
-                        <i class="bi bi-arrow-repeat me-1"></i> Submit another roadblock / email
-                    </button>
+                    }
+
+                    @if (_isLoadingKpis && _dashboardData == null)
+                    {
+                        <!-- Premium Skeleton Loader Grid -->
+                        <div class="dashboard-grid">
+                            @for (int i = 0; i < 5; i++)
+                            {
+                                <div class="kpi-tile-card loading-skeleton" style="height: 190px;">
+                                    <div class="skeleton-line" style="width: 40%; height: 20px; margin-bottom: 1.5rem;"></div>
+                                    <div class="skeleton-line" style="width: 60%; height: 40px; margin-bottom: 1rem;"></div>
+                                    <div class="skeleton-line" style="width: 80%; height: 16px;"></div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (_kpiError)
+                    {
+                        <!-- Error State -->
+                        <div class="premium-empty-state">
+                            <div class="premium-empty-icon text-danger">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            <h3 class="premium-empty-title">Failed to Load Dashboard</h3>
+                            <p class="premium-empty-desc">@_kpiErrorMessage</p>
+                            <button class="btn btn-primary rounded-pill px-4" @onclick="LoadDashboardData">
+                                <i class="bi bi-arrow-clockwise"></i> Try Again
+                            </button>
+                        </div>
+                    }
+                    else if (_dashboardData != null)
+                    {
+                        <div class="dashboard-grid">
+                            <!-- Tile 1: Fleet Inventory -->
+                            <div class="kpi-tile-card">
+                                <div class="kpi-accent-bar accent-cobalt"></div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="kpi-title text-muted fw-semibold mb-0">Inventory</h5>
+                                    <span class="kpi-icon-wrapper bg-cobalt-light text-primary">
+                                        <i class="bi bi-truck"></i>
+                                    </span>
+                                </div>
+                                
+                                @if (_dashboardData.Inventory.TotalCount == 0)
+                                {
+                                    <div class="kpi-empty-content py-2">
+                                        <h6 class="fw-bold mb-1">No vehicles in fleet</h6>
+                                        <p class="small text-muted mb-3">Add your first vehicle to get started.</p>
+                                        <button class="btn btn-sm btn-primary rounded-pill w-100" @onclick='() => ShowFeatureToast("Add Vehicle Form")'>
+                                            <i class="bi bi-plus-circle me-1"></i> Add Vehicle
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="kpi-value-wrapper mb-3">
+                                        <div class="kpi-display-value">@_dashboardData.Inventory.TotalCount</div>
+                                        <span class="small text-muted">Total Vehicles</span>
+                                    </div>
+                                    <div class="kpi-breakdown-row border-top pt-2">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Active</span>
+                                            <span class="fw-bold text-dark">@_dashboardData.Inventory.ActiveCount</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>In Shop</span>
+                                            <span class="fw-bold text-warning">@_dashboardData.Inventory.MaintenanceCount</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>Inactive</span>
+                                            <span class="fw-bold text-secondary">@_dashboardData.Inventory.InactiveCount</span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-action-row mt-3 border-top pt-2 text-end">
+                                        <a href="javascript:void(0)" class="kpi-action-link" @onclick='() => ShowFeatureToast("Manage Vehicles")'>
+                                            <span>Manage Fleet</span> <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Tile 2: Maintenance Status -->
+                            <div class="kpi-tile-card">
+                                <div class="kpi-accent-bar accent-amber"></div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="kpi-title text-muted fw-semibold mb-0">Maintenance</h5>
+                                    <span class="kpi-icon-wrapper bg-amber-light text-warning">
+                                        <i class="bi bi-wrench"></i>
+                                    </span>
+                                </div>
+
+                                @if (_dashboardData.Inventory.TotalCount == 0)
+                                {
+                                    <div class="kpi-empty-content py-4 text-center">
+                                        <i class="bi bi-clipboard-x text-muted display-6 mb-2 d-block"></i>
+                                        <span class="small text-muted">No schedule active</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="kpi-value-wrapper mb-3">
+                                        <div class="kpi-display-value text-warning">
+                                            @_dashboardData.Maintenance.InCompliance / @_dashboardData.Maintenance.ComingDue / @_dashboardData.Maintenance.OutOfCompliance
+                                        </div>
+                                        <span class="small text-muted">In Compliance / Due / Overdue</span>
+                                    </div>
+                                    <div class="kpi-breakdown-row border-top pt-2">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>In Compliance</span>
+                                            <span class="badge bg-success-light text-success rounded-pill px-2 py-1">@_dashboardData.Maintenance.InCompliance</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Coming Due</span>
+                                            <span class="badge bg-warning-light text-warning rounded-pill px-2 py-1">@_dashboardData.Maintenance.ComingDue</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>Out of Compliance</span>
+                                            <span class="badge bg-danger-light text-danger rounded-pill px-2 py-1">@_dashboardData.Maintenance.OutOfCompliance</span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-action-row mt-3 border-top pt-2 text-end">
+                                        <a href="javascript:void(0)" class="kpi-action-link" @onclick='() => ShowFeatureToast("Service Schedule")'>
+                                            <span>View Schedule</span> <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Tile 3: Fuel Costs -->
+                            <div class="kpi-tile-card">
+                                <div class="kpi-accent-bar accent-green"></div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="kpi-title text-muted fw-semibold mb-0">Fuel</h5>
+                                    <span class="kpi-icon-wrapper bg-green-light text-success">
+                                        <i class="bi bi-fuel-pump"></i>
+                                    </span>
+                                </div>
+
+                                @if (_dashboardData.Inventory.TotalCount == 0 || _dashboardData.Fuel.TotalCost == 0)
+                                {
+                                    <div class="kpi-empty-content py-2">
+                                        <h6 class="fw-bold mb-1">No fuel logs</h6>
+                                        <p class="small text-muted mb-3">Add fuel receipts to monitor costs.</p>
+                                        <button class="btn btn-sm btn-outline-success rounded-pill w-100" @onclick='() => ShowFeatureToast("Log Fuel Form")'>
+                                            <i class="bi bi-plus-circle me-1"></i> Log Fuel
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="kpi-value-wrapper mb-3">
+                                        <div class="kpi-display-value text-success">@_dashboardData.Fuel.TotalCost.ToString("C")</div>
+                                        <span class="small text-muted">This Month's Spending</span>
+                                    </div>
+                                    <div class="kpi-breakdown-row border-top pt-2">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Average Mileage</span>
+                                            <span class="fw-bold text-dark">@_dashboardData.Fuel.AverageMpg.ToString("F1") MPG</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Cost Per Mile</span>
+                                            <span class="fw-bold text-dark">@_dashboardData.Fuel.CostPerMile.ToString("C")</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>vs. Last Month</span>
+                                            <span class="fw-bold @(_dashboardData.Fuel.PercentageChange <= 0 ? "text-success" : "text-danger")">
+                                                @(_dashboardData.Fuel.PercentageChange > 0 ? "+" : "")@_dashboardData.Fuel.PercentageChange.ToString("F1")%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-action-row mt-3 border-top pt-2 text-end">
+                                        <a href="javascript:void(0)" class="kpi-action-link" @onclick='() => ShowFeatureToast("Fuel Log Book")'>
+                                            <span>Fuel Transactions</span> <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Tile 4: Registration status -->
+                            <div class="kpi-tile-card">
+                                <div class="kpi-accent-bar" style="background: #a855f7;"></div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="kpi-title text-muted fw-semibold mb-0">Registration</h5>
+                                    <span class="kpi-icon-wrapper bg-purple-light" style="color: #a855f7;">
+                                        <i class="bi bi-card-heading"></i>
+                                    </span>
+                                </div>
+
+                                @if (_dashboardData.Inventory.TotalCount == 0)
+                                {
+                                    <div class="kpi-empty-content py-4 text-center">
+                                        <i class="bi bi-calendar-x text-muted display-6 mb-2 d-block"></i>
+                                        <span class="small text-muted">No registrations logged</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="kpi-value-wrapper mb-3">
+                                        <div class="kpi-display-value" style="color: #a855f7;">
+                                            @_dashboardData.Registration.Active / @_dashboardData.Registration.InProgress
+                                        </div>
+                                        <span class="small text-muted">Active / In Progress</span>
+                                    </div>
+                                    <div class="kpi-breakdown-row border-top pt-2">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Active & Compliant</span>
+                                            <span class="fw-bold text-dark">@_dashboardData.Registration.Active</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>In Progress</span>
+                                            <span class="fw-bold text-warning">@_dashboardData.Registration.InProgress</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Expiring Soon</span>
+                                            <span class="fw-bold text-warning">@_dashboardData.Registration.ExpiringSoon</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>Expired</span>
+                                            <span class="fw-bold text-danger">@_dashboardData.Registration.Expired</span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-action-row mt-3 border-top pt-2 text-end">
+                                        <a href="javascript:void(0)" class="kpi-action-link" @onclick='() => ShowFeatureToast("Registration Tracker")'>
+                                            <span>Renewals</span> <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Tile 5: Drivers & Safety -->
+                            <div class="kpi-tile-card">
+                                <div class="kpi-accent-bar" style="background: #06b6d4;"></div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="kpi-title text-muted fw-semibold mb-0">Drivers & Safety</h5>
+                                    <span class="kpi-icon-wrapper bg-teal-light" style="color: #06b6d4;">
+                                        <i class="bi bi-people"></i>
+                                    </span>
+                                </div>
+
+                                @if (_dashboardData.Inventory.TotalCount == 0 || _dashboardData.Drivers.TotalDrivers == 0)
+                                {
+                                    <div class="kpi-empty-content py-2">
+                                        <h6 class="fw-bold mb-1">No drivers assigned</h6>
+                                        <p class="small text-muted mb-3">Link drivers to track licensing and safety.</p>
+                                        <button class="btn btn-sm btn-outline-info rounded-pill w-100" @onclick='() => ShowFeatureToast("Onboard Driver Form")'>
+                                            <i class="bi bi-person-plus me-1"></i> Add Driver
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="kpi-value-wrapper mb-3">
+                                        <div class="kpi-display-value" style="color: #06b6d4;">
+                                            @_dashboardData.Drivers.TotalDrivers
+                                        </div>
+                                        <span class="small text-muted">Total Active Drivers</span>
+                                    </div>
+                                    <div class="kpi-breakdown-row border-top pt-2">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Average Score</span>
+                                            <span class="badge rounded-pill px-2 py-1" style="background-color: rgba(6, 182, 212, 0.1); color: #06b6d4; font-weight: 700;">
+                                                @_dashboardData.Drivers.AverageSafetyScore%
+                                            </span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Active Operators</span>
+                                            <span class="fw-bold text-dark">@_dashboardData.Drivers.ActiveDrivers</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small text-muted">
+                                            <span>License Expirations</span>
+                                            <span class="fw-bold text-success">@_dashboardData.Drivers.ExpiredLicenses</span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-action-row mt-3 border-top pt-2 text-end">
+                                        <a href="javascript:void(0)" class="kpi-action-link" @onclick='() => ShowFeatureToast("Driver Profiles")'>
+                                            <span>View Roster</span> <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
-            }
-        </div>
+            </Authorized>
+        </AuthorizeView>
     }
 </div>
 
 @code {
     private bool _isInitialized = false;
-    private bool _isRegistered = false;
     private int _currentStep = 1;
     private List<string> _selectedRoadblocks = new();
     private string _customRoadblock = "";
@@ -190,6 +519,16 @@
     private string _emailError = "";
     private string _validationError = "";
     private bool _isSubmitting = false;
+
+    // Dashboard state variables
+    private DashboardKpiDto? _dashboardData;
+    private bool _isLoadingKpis = false;
+    private bool _kpiError = false;
+    private string _kpiErrorMessage = "";
+    private string _toastMessage = "";
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -200,7 +539,6 @@
                 var registeredStr = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "fleetnexus_alpha_registered");
                 if (registeredStr == "true")
                 {
-                    _isRegistered = true;
                     _currentStep = 4;
                     _email = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "fleetnexus_alpha_email") ?? "";
                     var roadblockStr = await JSRuntime.InvokeAsync<string?>("localStorage.getItem", "fleetnexus_alpha_roadblock") ?? "";
@@ -218,6 +556,63 @@
             _isInitialized = true;
             StateHasChanged();
         }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_isInitialized)
+        {
+            var authState = await AuthStateTask;
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                if (_dashboardData == null && !_isLoadingKpis)
+                {
+                    await LoadDashboardData();
+                }
+            }
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        _isLoadingKpis = true;
+        _kpiError = false;
+        _kpiErrorMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.GetAsync("api/dashboard/kpis");
+            if (response.IsSuccessStatusCode)
+            {
+                _dashboardData = await response.Content.ReadFromJsonAsync<DashboardKpiDto>();
+            }
+            else
+            {
+                _kpiError = true;
+                _kpiErrorMessage = $"Failed to load dashboard data. Server returned status code: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _kpiError = true;
+            _kpiErrorMessage = $"A network error occurred while loading dashboard data: {ex.Message}";
+        }
+        finally
+        {
+            _isLoadingKpis = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowFeatureToast(string featureName)
+    {
+        _toastMessage = $"The '{featureName}' module is currently under active development for our upcoming release. Stay tuned!";
+    }
+
+    private void DismissToast()
+    {
+        _toastMessage = "";
     }
 
     private void GoToStep2()
@@ -301,7 +696,6 @@
                 await JSRuntime.InvokeVoidAsync("localStorage.setItem", "fleetnexus_alpha_email", _email);
                 await JSRuntime.InvokeVoidAsync("localStorage.setItem", "fleetnexus_alpha_roadblock", roadblockValue);
 
-                _isRegistered = true;
                 _currentStep = 4;
             }
             else
@@ -326,7 +720,6 @@
 
     private async Task ResetForm()
     {
-        _isRegistered = false;
         _currentStep = 1;
         _email = "";
         _selectedRoadblocks.Clear();
