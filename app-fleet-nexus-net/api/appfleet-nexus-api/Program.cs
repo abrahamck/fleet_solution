@@ -27,6 +27,7 @@ try
 
     // Add services to the container
     builder.Services.AddControllers();
+    builder.Services.AddMemoryCache();
     builder.Services.AddFleetNexusSecurity(builder.Configuration);
     builder.Services.AddOpenApi();
     builder.Services.AddCors(options =>
