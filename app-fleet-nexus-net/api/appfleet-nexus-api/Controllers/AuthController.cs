@@ -65,9 +65,19 @@ public class AuthController : ControllerBase
                 {
                     response = await _authService.SignInAsync(request);
                 }
-                catch (HttpRequestException ex) when (ex.Message.Contains("Invalid login credentials") || ex.Message.Contains("User not found") || ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                catch (HttpRequestException)
                 {
-                    // If the user does not exist in Supabase yet, register them programmatically!
+                    // Check if the user is already in our local database
+                    var userExistsLocally = await _dbContext.Users.IgnoreQueryFilters()
+                        .AnyAsync(u => u.Email == "testuser@demo.com");
+
+                    if (userExistsLocally)
+                    {
+                        // User exists; login failed because the password was incorrect. Propagate the error.
+                        throw;
+                    }
+
+                    // User does not exist locally (e.g. brand new deploy); attempt signup
                     var signupRequest = new SignupRequest(
                         "testuser@demo.com",
                         request.Password,
