@@ -8,6 +8,8 @@ using AppFleetNexus.Data.Data;
 using AppFleetNexus.Data.Models;
 using System.Collections.Generic;
 using Microsoft.Extensions.Caching.Memory;
+using AppFleetNexus.Data.Tenancy;
+using AppFleetNexus.Security.Tenancy;
 
 namespace AppFleetNexus.Api.Controllers;
 
@@ -19,12 +21,18 @@ public class AuthController : ControllerBase
     private readonly ISupabaseAuthService _authService;
     private readonly FleetNexusDbContext _dbContext;
     private readonly IMemoryCache _cache;
+    private readonly ITenantContextAccessor _tenantAccessor;
 
-    public AuthController(ISupabaseAuthService authService, FleetNexusDbContext dbContext, IMemoryCache cache)
+    public AuthController(
+        ISupabaseAuthService authService, 
+        FleetNexusDbContext dbContext, 
+        IMemoryCache cache, 
+        ITenantContextAccessor tenantAccessor)
     {
         _authService = authService;
         _dbContext = dbContext;
         _cache = cache;
+        _tenantAccessor = tenantAccessor;
     }
 
     [HttpPost("signup")]
@@ -117,6 +125,13 @@ public class AuthController : ControllerBase
     {
         var demoTenantId = Guid.Parse("abc00000-0000-0000-0000-000000000000");
 
+        // 0. Establish the tenant context programmatically so DB auditing inherits the correct TenantId
+        if (_tenantAccessor is TenantContext tc)
+        {
+            tc.TenantId = demoTenantId;
+            tc.UserId = userId;
+        }
+
         // 1. Ensure the Tenant exists
         var tenant = await _dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == demoTenantId);
         if (tenant == null)
@@ -147,9 +162,9 @@ public class AuthController : ControllerBase
             _dbContext.Users.Add(user);
         }
 
-        // 3. Ensure the TenantUser link exists
+        // 3. Ensure the TenantUser link exists (checking by UserId to satisfy the unique constraint IX_tenant_users_UserId)
         var tenantUser = await _dbContext.TenantUsers.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(tu => tu.UserId == userId && tu.TenantId == demoTenantId);
+            .FirstOrDefaultAsync(tu => tu.UserId == userId);
         if (tenantUser == null)
         {
             tenantUser = new TenantUser
@@ -161,6 +176,11 @@ public class AuthController : ControllerBase
                 JoinedDate = DateTime.UtcNow
             };
             _dbContext.TenantUsers.Add(tenantUser);
+        }
+        else if (tenantUser.TenantId != demoTenantId)
+        {
+            tenantUser.TenantId = demoTenantId;
+            tenantUser.Role = "Admin";
         }
 
         await _dbContext.SaveChangesAsync();
