@@ -35,7 +35,7 @@ public class DashboardController : ControllerBase
             var tenantId = _tenantAccessor.CurrentTenantId;
             var cacheKey = $"dashboard_kpis_{tenantId}";
 
-            if (!_cache.TryGetValue(cacheKey, out DashboardKpiDto dto))
+            if (!_cache.TryGetValue(cacheKey, out DashboardKpiDto? dto) || dto == null)
             {
                 // 1. Fetch real vehicles from the database (tenant-isolated automatically by EF query filter)
                 var vehicles = await _dbContext.Vehicles.ToListAsync();

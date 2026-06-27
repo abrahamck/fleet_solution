@@ -75,8 +75,8 @@ try
         app.MapOpenApi();
     }
 
-    app.UseHttpsRedirection();
     app.UseCors("AllowBlazor");
+    app.UseHttpsRedirection();
     app.UseFleetNexusSecurity();
     app.MapControllers();
 

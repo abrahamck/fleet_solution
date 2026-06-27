@@ -4,7 +4,8 @@
     "projects": [
       "..\\appfleet-nexus-data\\appfleet-nexus-data.csproj",
       "..\\appfleet-nexus-security\\appfleet-nexus-security.csproj",
-      "appfleet-nexus-api.csproj"
+      "appfleet-nexus-api.csproj",
+      "..\\appfleet-nexus-api.Tests\\appfleet-nexus-api.Tests.csproj"
     ]
   }
 }
