@@ -33,6 +33,17 @@ public static class SecurityServiceExtensions
                 var url = supabaseSection["Url"] ?? "https://placeholder.supabase.co";
                 var jwtSecret = supabaseSection["JwtSecret"] ?? "dummy_jwt_secret_for_dev_must_be_configured_correctly_and_be_at_least_32_bytes";
                 
+                // Normalize URL: remove trailing slashes and any trailing /auth/v1 or /rest/v1
+                var baseUrl = url.TrimEnd('/');
+                if (baseUrl.EndsWith("/auth/v1", StringComparison.OrdinalIgnoreCase))
+                {
+                    baseUrl = baseUrl.Substring(0, baseUrl.Length - "/auth/v1".Length).TrimEnd('/');
+                }
+                else if (baseUrl.EndsWith("/rest/v1", StringComparison.OrdinalIgnoreCase))
+                {
+                    baseUrl = baseUrl.Substring(0, baseUrl.Length - "/rest/v1".Length).TrimEnd('/');
+                }
+
                 // Ensure key is at least 32 bytes (256 bits) to avoid startup errors
                 var keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
                 if (keyBytes.Length < 32)
@@ -43,7 +54,7 @@ public static class SecurityServiceExtensions
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = $"{url}/auth/v1",
+                    ValidIssuer = $"{baseUrl}/auth/v1",
                     ValidateAudience = true,
                     ValidAudience = "authenticated",
                     ValidateIssuerSigningKey = true,
