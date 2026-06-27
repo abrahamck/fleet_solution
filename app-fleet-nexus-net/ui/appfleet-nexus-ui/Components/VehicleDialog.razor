@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using appfleet_nexus_ui.Models
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop-fade show"></div>
+    <div class="modal-wrapper animate-fade-in" tabindex="-1" role="dialog">
+        <div class="modal-dialog-custom" role="document">
+            <div class="modal-content-custom">
+                <!-- Header -->
+                <div class="modal-header-custom border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">
+                        @if (Vehicle.Id == Guid.Empty)
+                        {
+                            <span><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Vehicle</span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle (Unit @Vehicle.UnitNumber)</span>
+                        }
+                    </h5>
+                    <button type="button" class="btn-close-custom" @onclick="Cancel" aria-label="Close" disabled="@IsSubmitting">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <EditForm Model="Vehicle" OnValidSubmit="Save">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body-custom py-3">
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger-custom mb-3 animate-fade-in" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <span>@ErrorMessage</span>
+                            </div>
+                        }
+
+                        <div class="row g-3">
+                            <!-- Unit Number -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Unit Number <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="Vehicle.UnitNumber" class="form-control-custom" placeholder="e.g. 101, TR-20" disabled="@IsSubmitting" />
+                                <ValidationMessage For="@(() => Vehicle.UnitNumber)" class="text-danger small mt-1 d-block" />
+                            </div>
+
+                            <!-- Vehicle Type -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Type</label>
+                                <InputSelect @bind-Value="Vehicle.Type" class="form-select-custom" disabled="@IsSubmitting">
+                                    <option value="">Select Type...</option>
+                                    <option value="Truck">Truck</option>
+                                    <option value="Trailer">Trailer</option>
+                                    <option value="Van">Van</option>
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Other">Other</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => Vehicle.Type)" class="text-danger small mt-1 d-block" />
+                            </div>
+
+                            <!-- Make -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Make</label>
+                                <InputText @bind-Value="Vehicle.Make" class="form-control-custom" placeholder="e.g. Ford, Chevrolet" disabled="@IsSubmitting" />
+                            </div>
+
+                            <!-- Model -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Model</label>
+                                <InputText @bind-Value="Vehicle.Model" class="form-control-custom" placeholder="e.g. F-150, Transit" disabled="@IsSubmitting" />
+                            </div>
+
+                            <!-- Year -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Year</label>
+                                <InputNumber @bind-Value="Vehicle.Year" class="form-control-custom" placeholder="e.g. 2023" disabled="@IsSubmitting" />
+                                <ValidationMessage For="@(() => Vehicle.Year)" class="text-danger small mt-1 d-block" />
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">Status</label>
+                                <InputSelect @bind-Value="Vehicle.Status" class="form-select-custom" disabled="@IsSubmitting">
+                                    <option value="Active">Active</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Inactive">Inactive</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => Vehicle.Status)" class="text-danger small mt-1 d-block" />
+                            </div>
+
+                            <!-- VIN -->
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold text-muted small">VIN (17 characters)</label>
+                                <InputText @bind-Value="Vehicle.Vin" class="form-control-custom" placeholder="Enter Vehicle Identification Number" disabled="@IsSubmitting" />
+                            </div>
+
+                            <!-- License Plate -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">License Plate</label>
+                                <InputText @bind-Value="Vehicle.LicensePlate" class="form-control-custom" placeholder="e.g. TX-12345" disabled="@IsSubmitting" />
+                            </div>
+
+                            <!-- License State -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-muted small">License State (2-letter)</label>
+                                <InputText @bind-Value="Vehicle.LicenseState" class="form-control-custom" placeholder="e.g. TX" disabled="@IsSubmitting" />
+                                <ValidationMessage For="@(() => Vehicle.LicenseState)" class="text-danger small mt-1 d-block" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="modal-footer-custom border-top py-3 d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary px-4 py-2" @onclick="Cancel" disabled="@IsSubmitting">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2" disabled="@IsSubmitting">
+                            @if (IsSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-lg"></i>
+                                <span>Save Vehicle</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public VehicleDto Vehicle { get; set; } = new();
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<VehicleDto> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task Save()
+    {
+        await OnSave.InvokeAsync(Vehicle);
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}
