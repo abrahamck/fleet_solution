@@ -31,7 +31,6 @@ public static class SecurityServiceExtensions
             {
                 var supabaseSection = configuration.GetSection(SupabaseOptions.SectionName);
                 var url = supabaseSection["Url"] ?? "https://placeholder.supabase.co";
-                var jwtSecret = supabaseSection["JwtSecret"] ?? "dummy_jwt_secret_for_dev_must_be_configured_correctly_and_be_at_least_32_bytes";
                 
                 // Normalize URL: remove trailing slashes and any trailing /auth/v1 or /rest/v1
                 var baseUrl = url.TrimEnd('/');
@@ -44,12 +43,8 @@ public static class SecurityServiceExtensions
                     baseUrl = baseUrl.Substring(0, baseUrl.Length - "/rest/v1".Length).TrimEnd('/');
                 }
 
-                // Ensure key is at least 32 bytes (256 bits) to avoid startup errors
-                var keyBytes = Encoding.UTF8.GetBytes(jwtSecret);
-                if (keyBytes.Length < 32)
-                {
-                    Array.Resize(ref keyBytes, 32);
-                }
+                // Configure OpenID Connect discovery endpoint to automatically fetch public keys (JWKS) for ES256
+                options.MetadataAddress = $"{baseUrl}/auth/v1/.well-known/openid-configuration";
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -57,9 +52,9 @@ public static class SecurityServiceExtensions
                     ValidIssuer = $"{baseUrl}/auth/v1",
                     ValidateAudience = true,
                     ValidAudience = "authenticated",
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
                     ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidAlgorithms = new[] { SecurityAlgorithms.EcdsaSha256 }
                 };
             });
 
