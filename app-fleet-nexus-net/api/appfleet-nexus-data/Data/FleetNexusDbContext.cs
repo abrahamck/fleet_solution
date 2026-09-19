@@ -22,7 +22,7 @@ public class FleetNexusDbContext : DbContext
 
     public DbSet<Carrier> Carriers { get; set; }
     
-    // New DbSets
+    // Core DbSets
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<TenantUser> TenantUsers { get; set; }
@@ -30,11 +30,17 @@ public class FleetNexusDbContext : DbContext
     public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<AlphaRegistration> AlphaRegistrations { get; set; }
 
+    // Contact Management DbSets (FEATURE-001)
+    public DbSet<ContactPhone>   ContactPhones    { get; set; }
+    public DbSet<ContactEmail>   ContactEmails    { get; set; }
+    public DbSet<ContactAddress> ContactAddresses { get; set; }
+    public DbSet<VehicleContact> VehicleContacts  { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Existing Carrier config
+        // ─── Existing Carrier config ───
         modelBuilder.Entity<Carrier>(entity =>
         {
             entity.ToTable("fmcsa_census");
@@ -58,6 +64,12 @@ public class FleetNexusDbContext : DbContext
             entity.HasIndex(e => e.CreatedAt);
         });
 
+        // Contact Management table mappings (FEATURE-001 — ADR-023)
+        modelBuilder.Entity<ContactPhone>().ToTable("contact_phones");
+        modelBuilder.Entity<ContactEmail>().ToTable("contact_emails");
+        modelBuilder.Entity<ContactAddress>().ToTable("contact_addresses");
+        modelBuilder.Entity<VehicleContact>().ToTable("vehicle_contacts");
+
         // ─── TenantUser composite key ───
         modelBuilder.Entity<TenantUser>()
             .HasKey(tu => new { tu.UserId, tu.TenantId });
@@ -78,6 +90,20 @@ public class FleetNexusDbContext : DbContext
             .HasForeignKey(v => v.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // VehicleContact → Vehicle (M:M join)
+        modelBuilder.Entity<VehicleContact>()
+            .HasOne(vc => vc.Vehicle)
+            .WithMany(v => v.ContactAssignments)
+            .HasForeignKey(vc => vc.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // VehicleContact → Contact (M:M join)
+        modelBuilder.Entity<VehicleContact>()
+            .HasOne(vc => vc.Contact)
+            .WithMany(c => c.VehicleAssignments)
+            .HasForeignKey(vc => vc.ContactId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // ─── Indexes ───
 
         // Unique email on users
@@ -95,6 +121,12 @@ public class FleetNexusDbContext : DbContext
             .HasIndex(c => c.TenantId)
             .HasFilter("\"IsDeleted\" = false");
 
+        // Partial unique index on contacts.unique_id per tenant (ADR-017)
+        modelBuilder.Entity<Contact>()
+            .HasIndex(c => new { c.TenantId, c.UniqueId })
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false AND \"UniqueId\" IS NOT NULL");
+
         // Filtered index on vehicles by tenant (active records only)
         modelBuilder.Entity<Vehicle>()
             .HasIndex(v => v.TenantId)
@@ -106,10 +138,54 @@ public class FleetNexusDbContext : DbContext
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");
 
+        // ContactPhone indexes — owner lookup
+        modelBuilder.Entity<ContactPhone>()
+            .HasIndex(p => new { p.OwnerType, p.OwnerId })
+            .HasFilter("\"IsDeleted\" = false");
+
+        modelBuilder.Entity<ContactPhone>()
+            .HasIndex(p => p.TenantId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        // ContactEmail indexes — owner lookup
+        modelBuilder.Entity<ContactEmail>()
+            .HasIndex(e => new { e.OwnerType, e.OwnerId })
+            .HasFilter("\"IsDeleted\" = false");
+
+        modelBuilder.Entity<ContactEmail>()
+            .HasIndex(e => e.TenantId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        // ContactAddress indexes — owner lookup
+        modelBuilder.Entity<ContactAddress>()
+            .HasIndex(a => new { a.OwnerType, a.OwnerId })
+            .HasFilter("\"IsDeleted\" = false");
+
+        modelBuilder.Entity<ContactAddress>()
+            .HasIndex(a => a.TenantId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        // VehicleContact indexes
+        modelBuilder.Entity<VehicleContact>()
+            .HasIndex(vc => vc.VehicleId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        modelBuilder.Entity<VehicleContact>()
+            .HasIndex(vc => vc.ContactId)
+            .HasFilter("\"IsDeleted\" = false");
+
+        modelBuilder.Entity<VehicleContact>()
+            .HasIndex(vc => vc.TenantId)
+            .HasFilter("\"IsDeleted\" = false");
+
         // ─── Default values ───
         modelBuilder.Entity<Vehicle>()
             .Property(v => v.Status)
             .HasDefaultValue("Active");
+
+        modelBuilder.Entity<ContactAddress>()
+            .Property(a => a.Country)
+            .HasDefaultValue("USA");
 
         // ─── Global query filters for tenant isolation + soft delete ───
         // If _tenantAccessor is null (e.g. design time), we fallback to Guid.Empty to avoid NRE.
@@ -117,6 +193,19 @@ public class FleetNexusDbContext : DbContext
             .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
         
         modelBuilder.Entity<Vehicle>()
+            .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
+
+        // Contact Management global query filters (FEATURE-001)
+        modelBuilder.Entity<ContactPhone>()
+            .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
+
+        modelBuilder.Entity<ContactEmail>()
+            .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
+
+        modelBuilder.Entity<ContactAddress>()
+            .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
+
+        modelBuilder.Entity<VehicleContact>()
             .HasQueryFilter(e => e.TenantId == (_tenantAccessor != null ? _tenantAccessor.CurrentTenantId : Guid.Empty) && !e.IsDeleted);
     }
 
