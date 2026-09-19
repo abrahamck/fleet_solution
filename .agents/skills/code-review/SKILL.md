@@ -83,3 +83,26 @@ Contradictions: NONE DETECTED
 -----------------
 STATUS: READY_FOR_HUMAN_APPROVAL
 ```
+
+### Step 5: Push Branch & Submit Pull Request (PR)
+Once pre-merge validation passes:
+1. **Push Branch to Remote**:
+   ```bash
+   git push -u origin feature/FEATURE-XXX-[description]
+   ```
+2. **Create Pull Request**:
+   - **Target**: `main`
+   - **Title**: `feat([scope]): FEATURE-XXX [Feature Title]`
+   - **Description**: Include the complete **Structured Review Report** generated in Step 4.
+   - Command (if GitHub CLI is installed):
+     ```bash
+     gh pr create --base main --head feature/FEATURE-XXX-[description] --title "feat(scope): FEATURE-XXX Title" --body-file docs/features/FEATURE-XXX/evidence.md
+     ```
+
+### Step 6: Post-Merge Cleanup
+Once the human approves and merges the Pull Request into `main`:
+1. Mark `status.md` as `MERGED`.
+2. Clean up the isolated worktree sandbox:
+   ```powershell
+   .\scripts\worktree-helper.ps1 remove -FeatureId "FEATURE-XXX"
+   ```

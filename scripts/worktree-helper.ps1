@@ -21,7 +21,10 @@ param(
     [string]$FeatureId,
 
     [Parameter(Mandatory = $false)]
-    [string]$Branch
+    [string]$Branch,
+
+    [Parameter(Mandatory = $false)]
+    [string]$BaseBranch = "main"
 )
 
 $RepoRoot = (Resolve-Path "$PSScriptRoot\..").Path
@@ -53,14 +56,17 @@ switch ($Action) {
             $Branch = "feature/$FeatureId"
         }
 
-        Write-Host "Creating isolated worktree for $FeatureId on branch '$Branch'..." -ForegroundColor Green
+        Write-Host "Creating isolated worktree for $FeatureId on branch '$Branch' (based on '$BaseBranch')..." -ForegroundColor Green
         
-        # Check if branch exists
+        # Check if target branch already exists
         $branchExists = git -C $RepoRoot branch --list $Branch
         if ($branchExists) {
             git -C $RepoRoot worktree add "$TargetDir" "$Branch"
         } else {
-            git -C $RepoRoot worktree add -b "$Branch" "$TargetDir" HEAD
+            # Check if BaseBranch exists, fallback to HEAD if not
+            $baseExists = git -C $RepoRoot branch --list $BaseBranch
+            $baseTarget = if ($baseExists) { $BaseBranch } else { "HEAD" }
+            git -C $RepoRoot worktree add -b "$Branch" "$TargetDir" $baseTarget
         }
 
         if ($LASTEXITCODE -eq 0) {

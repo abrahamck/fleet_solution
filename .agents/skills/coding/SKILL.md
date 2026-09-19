@@ -24,7 +24,22 @@ This skill governs the Implementation, Targeted Test Execution, and Evidence Log
 
 ---
 
-## 2. Step-by-Step Task Execution Workflow
+## 2. Git Branching & Worktree Isolation Standards
+
+1. **Branch Naming Standard**:
+   - Format: `[type]/[FEATURE-ID]-[short-kebab-description]`
+   - Examples: `feature/FEATURE-005-driver-management`, `fix/BUG-012-token-refresh`
+   - **Base Branch**: Always branched from latest `main`.
+2. **Worktree Directory**:
+   - Location: `.worktrees/[FEATURE-ID]` (e.g. `.worktrees/FEATURE-005`)
+   - Initialized using: `.\scripts\worktree-helper.ps1 create -FeatureId "FEATURE-005" -Branch "feature/FEATURE-005-driver-management"`
+3. **Atomic Task Commit Standard**:
+   - Commit message: `feat(FEATURE-XXX): Task ### - [Brief Description]`
+   - Example: `git commit -m "feat(FEATURE-005): Task 001 - Driver domain entity and migrations"`
+
+---
+
+## 3. Step-by-Step Task Execution Workflow
 
 ```mermaid
 flowchart TD
@@ -35,7 +50,7 @@ flowchart TD
     E --> F{All Tests Passing?}
     F -->|No| G[Step 5: Debug & Fix within Bounds]
     G --> E
-    F -->|Yes| H[Step 6: Update evidence.md & Task Status to VERIFIED]
+    F -->|Yes| H[Step 6: Update evidence.md, Commit Task & Mark VERIFIED]
 ```
 
 ### Step 1: Preflight & Context Check
@@ -58,9 +73,10 @@ Execute the specific test project or filtered test class:
 dotnet test c:\Learn\fleet_solution\app-fleet-nexus-net\api\appfleet-nexus-api.Tests --filter "FullyQualifiedName~TargetTests"
 ```
 
-### Step 4: Record Machine-Verifiable Evidence
-Update `docs/features/FEATURE-XXX/evidence.md`:
-1. Change status from `UNVERIFIED` to `VERIFIED`.
-2. Record the exact source file line (`src/.../File.cs:42`) and test line (`tests/.../Test.cs:18`).
-3. Paste the passing test execution summary into the Test Execution Log section.
-4. Mark the task contract (`tasks/###-*.md`) status as `VERIFIED`.
+### Step 4: Record Machine-Verifiable Evidence & Commit
+1. Update `docs/features/FEATURE-XXX/evidence.md`:
+   - Change status from `UNVERIFIED` to `VERIFIED`.
+   - Record exact source file line (`src/.../File.cs:42`) and test line (`tests/.../Test.cs:18`).
+   - Paste the passing test execution summary into the Test Execution Log section.
+2. Mark the task contract (`tasks/###-*.md`) status as `VERIFIED`.
+3. Make an atomic commit for the completed task.
