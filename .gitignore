@@ -176,3 +176,6 @@ TestResults/
 
 # Local settings with secrets (never commit)
 appsettings.Local.json
+
+# Git Worktree sandbox directory
+.worktrees/
