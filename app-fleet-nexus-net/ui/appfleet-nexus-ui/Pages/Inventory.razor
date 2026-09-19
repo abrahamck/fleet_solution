@@ -898,9 +898,35 @@
                 try
                 {
                     using var doc = System.Text.Json.JsonDocument.Parse(errorText);
-                    if (doc.RootElement.TryGetProperty("message", out var msgProp))
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("errors", out var errorsProp) && errorsProp.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    {
+                        var messages = new List<string>();
+                        foreach (var prop in errorsProp.EnumerateObject())
+                        {
+                            if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                            {
+                                foreach (var item in prop.Value.EnumerateArray())
+                                {
+                                    var val = item.GetString();
+                                    if (!string.IsNullOrWhiteSpace(val)) messages.Add(val);
+                                }
+                            }
+                            else if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.String)
+                            {
+                                var val = prop.Value.GetString();
+                                if (!string.IsNullOrWhiteSpace(val)) messages.Add(val);
+                            }
+                        }
+                        _contactModalErrorMessage = messages.Count > 0 ? string.Join(" ", messages) : "Validation failed. Please review your inputs.";
+                    }
+                    else if (root.TryGetProperty("message", out var msgProp))
                     {
                         _contactModalErrorMessage = msgProp.GetString();
+                    }
+                    else if (root.TryGetProperty("title", out var titleProp))
+                    {
+                        _contactModalErrorMessage = titleProp.GetString();
                     }
                     else
                     {

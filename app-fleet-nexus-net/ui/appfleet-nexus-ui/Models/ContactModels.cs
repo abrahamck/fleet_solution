@@ -81,6 +81,7 @@ public class ContactUpsertRequest
     public List<ContactPhoneDto> Phones { get; set; } = new();
     public List<ContactEmailDto> Emails { get; set; } = new();
     public List<ContactAddressDto> Addresses { get; set; } = new();
+    public List<VehicleContactAssignmentDto> VehicleAssignments { get; set; } = new();
 }
 
 public class ContactPhoneDto
