@@ -1,0 +1,707 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using appfleet_nexus_ui.Models
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop-fade show"></div>
+    <div class="modal-wrapper animate-fade-in" tabindex="-1" role="dialog">
+        <div class="modal-dialog-custom modal-dialog-lg" role="document">
+            <div class="modal-content-custom">
+                <!-- Header -->
+                <div class="modal-header-custom border-bottom">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            @if (IsEditMode)
+                            {
+                                <span><i class="bi bi-person-gear text-primary me-2"></i>Edit Contact (@Contact.FirstName @Contact.LastName)</span>
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-person-plus-fill text-primary me-2"></i>Add New Contact</span>
+                            }
+                        </h5>
+                        <p class="text-muted small mb-0">Follow the 5-step wizard to manage directory contact details and compliance.</p>
+                    </div>
+                    <button type="button" class="btn-close-custom" @onclick="Cancel" aria-label="Close" disabled="@IsSubmitting">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Step Progress Bar -->
+                <div class="wizard-progress-bar px-4 pt-3 pb-2 border-bottom bg-light">
+                    <div class="d-flex justify-content-between position-relative">
+                        <div class="wizard-step-node @(_currentStep == 1 ? "active" : (_currentStep > 1 ? "completed" : ""))" @onclick="() => GoToStep(1)">
+                            <div class="step-circle">@(_currentStep > 1 ? "✓" : "1")</div>
+                            <span class="step-label">Identity</span>
+                        </div>
+                        <div class="wizard-step-node @(_currentStep == 2 ? "active" : (_currentStep > 2 ? "completed" : ""))" @onclick="() => GoToStep(2)">
+                            <div class="step-circle">@(_currentStep > 2 ? "✓" : "2")</div>
+                            <span class="step-label">Phones</span>
+                        </div>
+                        <div class="wizard-step-node @(_currentStep == 3 ? "active" : (_currentStep > 3 ? "completed" : ""))" @onclick="() => GoToStep(3)">
+                            <div class="step-circle">@(_currentStep > 3 ? "✓" : "3")</div>
+                            <span class="step-label">Address & Email</span>
+                        </div>
+                        <div class="wizard-step-node @(_currentStep == 4 ? "active" : (_currentStep > 4 ? "completed" : ""))" @onclick="() => GoToStep(4)">
+                            <div class="step-circle">@(_currentStep > 4 ? "✓" : "4")</div>
+                            <span class="step-label">Compliance</span>
+                        </div>
+                        <div class="wizard-step-node @(_currentStep == 5 ? "active" : "")" @onclick="() => GoToStep(5)">
+                            <div class="step-circle">5</div>
+                            <span class="step-label">Review</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body-custom py-4">
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger-custom mb-3 animate-fade-in" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span>@ErrorMessage</span>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_stepError))
+                    {
+                        <div class="alert alert-warning-custom mb-3 animate-fade-in" role="alert">
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                            <span>@_stepError</span>
+                        </div>
+                    }
+
+                    @* ───────────────── STEP 1: IDENTITY ───────────────── *@
+                    @if (_currentStep == 1)
+                    {
+                        <div class="wizard-step-content animate-fade-in">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person-vcard text-primary me-2"></i>Step 1: Contact Identity</h6>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Unique ID / Employee #</label>
+                                    <input type="text" class="form-control-custom" placeholder="e.g. EMP-1042" @bind="Contact.UniqueId" disabled="@IsSubmitting" />
+                                    <span class="text-muted extra-small">Optional unique identifier</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Contact Type <span class="text-danger">*</span></label>
+                                    <select class="form-select-custom" @bind="Contact.ContactType" disabled="@IsSubmitting">
+                                        <option value="Driver">Driver</option>
+                                        <option value="FleetManager">Fleet Manager</option>
+                                        <option value="Vendor">Vendor</option>
+                                        <option value="Customer">Customer</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Status <span class="text-danger">*</span></label>
+                                    <select class="form-select-custom" @bind="Contact.Status" disabled="@IsSubmitting">
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control-custom" placeholder="First name" @bind="Contact.FirstName" disabled="@IsSubmitting" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Middle Name</label>
+                                    <input type="text" class="form-control-custom" placeholder="Middle name (optional)" @bind="Contact.MiddleName" disabled="@IsSubmitting" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control-custom" placeholder="Last name" @bind="Contact.LastName" disabled="@IsSubmitting" />
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold text-muted small">Job Title / Role</label>
+                                    <input type="text" class="form-control-custom" placeholder="e.g. Senior Heavy Duty Driver, Fleet Operations Lead" @bind="Contact.JobTitle" disabled="@IsSubmitting" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @* ───────────────── STEP 2: PHONES ───────────────── *@
+                    else if (_currentStep == 2)
+                    {
+                        <div class="wizard-step-content animate-fade-in">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-telephone-fill text-primary me-2"></i>Step 2: Phone Numbers</h6>
+                                    <p class="text-muted small mb-0">At least one phone number is required (Invariant I-001).</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddPhone">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Phone
+                                </button>
+                            </div>
+
+                            <div class="contact-points-list">
+                                @for (int i = 0; i < Contact.Phones.Count; i++)
+                                {
+                                    var index = i;
+                                    var phone = Contact.Phones[index];
+                                    <div class="card p-3 mb-2 border rounded-3 bg-light shadow-2xs">
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Phone Number <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control-custom" placeholder="e.g. (555) 123-4567" @bind="phone.PhoneNumber" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Label</label>
+                                                <select class="form-select-custom" @bind="phone.Label">
+                                                    <option value="Mobile">Mobile</option>
+                                                    <option value="Work">Work</option>
+                                                    <option value="Primary">Primary</option>
+                                                    <option value="Emergency">Emergency</option>
+                                                    <option value="Home">Home</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Primary Phone</label>
+                                                <div class="form-check form-switch mt-1">
+                                                    <input class="form-check-input" type="checkbox" checked="@phone.IsPrimary" @onchange="() => SetPrimaryPhone(index)" id="@($"phone-primary-{index}")">
+                                                    <label class="form-check-label small" for="@($"phone-primary-{index}")">
+                                                        @(phone.IsPrimary ? "Primary" : "Secondary")
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2 text-end">
+                                                @if (Contact.Phones.Count > 1)
+                                                {
+                                                    <button type="button" class="btn btn-outline-danger btn-sm mt-3" @onclick="() => RemovePhone(index)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @* ───────────────── STEP 3: ADDRESS & EMAIL ───────────────── *@
+                    else if (_currentStep == 3)
+                    {
+                        <div class="wizard-step-content animate-fade-in">
+                            <!-- Addresses Section -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Postal Addresses</h6>
+                                    <p class="text-muted small mb-0">At least one address is required (Invariant I-001).</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddAddress">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Address
+                                </button>
+                            </div>
+
+                            <div class="contact-points-list mb-4">
+                                @for (int i = 0; i < Contact.Addresses.Count; i++)
+                                {
+                                    var index = i;
+                                    var address = Contact.Addresses[index];
+                                    <div class="card p-3 mb-2 border rounded-3 bg-light shadow-2xs">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-secondary">Address #@(index + 1)</span>
+                                                <div class="form-check form-switch mb-0">
+                                                    <input class="form-check-input" type="checkbox" checked="@address.IsPrimary" @onchange="() => SetPrimaryAddress(index)" id="@($"addr-primary-{index}")">
+                                                    <label class="form-check-label small fw-semibold" for="@($"addr-primary-{index}")">
+                                                        @(address.IsPrimary ? "Primary Address" : "Alternate")
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @if (Contact.Addresses.Count > 1)
+                                            {
+                                                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveAddress(index)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Label</label>
+                                                <select class="form-select-custom" @bind="address.Label">
+                                                    <option value="Home">Home</option>
+                                                    <option value="Mailing">Mailing</option>
+                                                    <option value="Garage">Garage</option>
+                                                    <option value="Billing">Billing</option>
+                                                    <option value="Office">Office</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-9">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Street Address Line 1 <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control-custom" placeholder="Street address or P.O. Box" @bind="address.AddressLine1" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="text" class="form-control-custom" placeholder="Apt, Suite, Bldg (Line 2)" @bind="address.AddressLine2" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="text" class="form-control-custom" placeholder="Additional info (Line 3)" @bind="address.AddressLine3" />
+                                            </div>
+                                            <div class="col-md-5">
+                                                <input type="text" class="form-control-custom" placeholder="City *" @bind="address.City" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <input type="text" class="form-control-custom" placeholder="State/Prov *" @bind="address.State" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" class="form-control-custom" placeholder="Postal Code *" @bind="address.PostalCode" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Emails Section -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-envelope-fill text-primary me-2"></i>Email Addresses (Optional)</h6>
+                                    <p class="text-muted small mb-0">Add work or personal email contacts.</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddEmail">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Email
+                                </button>
+                            </div>
+
+                            <div class="contact-points-list">
+                                @if (Contact.Emails.Count == 0)
+                                {
+                                    <div class="text-muted small py-2 fst-italic">No email addresses added yet. Click "Add Email" to add one.</div>
+                                }
+                                @for (int i = 0; i < Contact.Emails.Count; i++)
+                                {
+                                    var index = i;
+                                    var email = Contact.Emails[index];
+                                    <div class="card p-3 mb-2 border rounded-3 bg-light shadow-2xs">
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-md-5">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Email Address <span class="text-danger">*</span></label>
+                                                <input type="email" class="form-control-custom" placeholder="e.g. driver@example.com" @bind="email.EmailAddress" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Label</label>
+                                                <select class="form-select-custom" @bind="email.Label">
+                                                    <option value="Work">Work</option>
+                                                    <option value="Personal">Personal</option>
+                                                    <option value="Billing">Billing</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-semibold text-muted small mb-1">Primary Email</label>
+                                                <div class="form-check form-switch mt-1">
+                                                    <input class="form-check-input" type="checkbox" checked="@email.IsPrimary" @onchange="() => SetPrimaryEmail(index)" id="@($"email-primary-{index}")">
+                                                    <label class="form-check-label small" for="@($"email-primary-{index}")">
+                                                        @(email.IsPrimary ? "Primary" : "Secondary")
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-1 text-end">
+                                                <button type="button" class="btn btn-outline-danger btn-sm mt-3" @onclick="() => RemoveEmail(index)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @* ───────────────── STEP 4: COMPLIANCE ───────────────── *@
+                    else if (_currentStep == 4)
+                    {
+                        <div class="wizard-step-content animate-fade-in">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check text-primary me-2"></i>Step 4: Driver Compliance & Emergency</h6>
+                            
+                            <div class="card p-3 mb-3 border rounded-3 bg-light">
+                                <h6 class="fw-semibold text-dark mb-3">Driver's License & Medical Certification</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-muted small">License Number</label>
+                                        <input type="text" class="form-control-custom" placeholder="e.g. DL-8839201" @bind="Contact.LicenseNumber" disabled="@IsSubmitting" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-muted small">License State (2-letters)</label>
+                                        <input type="text" class="form-control-custom" maxlength="2" placeholder="e.g. TX" @bind="Contact.LicenseState" disabled="@IsSubmitting" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-muted small">License Expiration Date</label>
+                                        <input type="date" class="form-control-custom" value="@FormatDate(Contact.LicenseExpirationDate)" @onchange="e => Contact.LicenseExpirationDate = ParseDate(e.Value?.ToString())" disabled="@IsSubmitting" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-muted small">DOT Medical Card Expiration Date</label>
+                                        <input type="date" class="form-control-custom" value="@FormatDate(Contact.MedicalCertExpirationDate)" @onchange="e => Contact.MedicalCertExpirationDate = ParseDate(e.Value?.ToString())" disabled="@IsSubmitting" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card p-3 border rounded-3 bg-light">
+                                <h6 class="fw-semibold text-dark mb-3">Emergency Contact Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-muted small">Emergency Contact Name</label>
+                                        <input type="text" class="form-control-custom" placeholder="e.g. Mary Doe (Spouse)" @bind="Contact.EmergencyContactName" disabled="@IsSubmitting" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold text-muted small">Emergency Contact Phone</label>
+                                        <input type="text" class="form-control-custom" placeholder="e.g. (555) 987-6543" @bind="Contact.EmergencyContactPhone" disabled="@IsSubmitting" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    @* ───────────────── STEP 5: REVIEW & NOTES ───────────────── *@
+                    else if (_currentStep == 5)
+                    {
+                        <div class="wizard-step-content animate-fade-in">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-card-checklist text-primary me-2"></i>Step 5: Notes & Summary Review</h6>
+
+                            <!-- Notes Field -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted small">Operational Notes</label>
+                                <textarea class="form-control-custom" rows="3" placeholder="Enter any relevant internal notes, certifications, shift preferences..." @bind="Contact.Notes" disabled="@IsSubmitting"></textarea>
+                            </div>
+
+                            <!-- Summary Review Card -->
+                            <div class="card p-3 border rounded-3 bg-light">
+                                <h6 class="fw-semibold text-dark mb-2">Contact Profile Review</h6>
+                                <div class="row g-2 small">
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Full Name:</div>
+                                        <div class="fw-bold text-dark">@Contact.FirstName @Contact.MiddleName @Contact.LastName</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-muted">Type:</div>
+                                        <span class="badge bg-primary">@Contact.ContactType</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-muted">Status:</div>
+                                        <span class="badge @(Contact.Status == "Active" ? "bg-success" : "bg-secondary")">@Contact.Status</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Unique ID:</div>
+                                        <div>@(string.IsNullOrWhiteSpace(Contact.UniqueId) ? "None" : Contact.UniqueId)</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Job Title:</div>
+                                        <div>@(string.IsNullOrWhiteSpace(Contact.JobTitle) ? "None" : Contact.JobTitle)</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Primary Phone:</div>
+                                        <div class="fw-semibold">@(Contact.Phones.FirstOrDefault(p => p.IsPrimary)?.PhoneNumber ?? Contact.Phones.FirstOrDefault()?.PhoneNumber ?? "None")</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Primary Address:</div>
+                                        <div class="fw-semibold">@(Contact.Addresses.FirstOrDefault(a => a.IsPrimary)?.AddressLine1 ?? Contact.Addresses.FirstOrDefault()?.AddressLine1 ?? "None")</div>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(Contact.LicenseNumber))
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="text-muted">License:</div>
+                                            <div>@Contact.LicenseNumber (@Contact.LicenseState) — Exp: @(Contact.LicenseExpirationDate?.ToString("yyyy-MM-dd") ?? "N/A")</div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Footer Navigation -->
+                <div class="modal-footer-custom border-top d-flex justify-content-between">
+                    <div>
+                        @if (_currentStep > 1)
+                        {
+                            <button type="button" class="btn btn-outline-secondary px-3" @onclick="PreviousStep" disabled="@IsSubmitting">
+                                <i class="bi bi-arrow-left me-1"></i> Back
+                            </button>
+                        }
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary px-3" @onclick="Cancel" disabled="@IsSubmitting">
+                            Cancel
+                        </button>
+                        @if (_currentStep < 5)
+                        {
+                            <button type="button" class="btn btn-primary px-4 shadow-sm" @onclick="NextStep" disabled="@IsSubmitting">
+                                Next <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-success px-4 shadow-sm" @onclick="Save" disabled="@IsSubmitting">
+                                @if (IsSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    <span>Saving...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check2-circle me-1"></i>
+                                    <span>@(IsEditMode ? "Update Contact" : "Save Contact")</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public ContactUpsertRequest Contact { get; set; } = new();
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    [Parameter] public bool IsSubmitting { get; set; } = false;
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<ContactUpsertRequest> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private int _currentStep = 1;
+    private string? _stepError;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            // Ensure at least 1 phone and 1 address exist in the form
+            if (Contact.Phones == null || Contact.Phones.Count == 0)
+            {
+                Contact.Phones = new List<ContactPhoneDto>
+                {
+                    new ContactPhoneDto { PhoneNumber = "", Label = "Mobile", IsPrimary = true }
+                };
+            }
+            if (Contact.Addresses == null || Contact.Addresses.Count == 0)
+            {
+                Contact.Addresses = new List<ContactAddressDto>
+                {
+                    new ContactAddressDto { AddressLine1 = "", City = "", State = "", PostalCode = "", Label = "Home", IsPrimary = true }
+                };
+            }
+            if (Contact.Emails == null)
+            {
+                Contact.Emails = new List<ContactEmailDto>();
+            }
+        }
+        else
+        {
+            _currentStep = 1;
+            _stepError = null;
+        }
+    }
+
+    private void GoToStep(int step)
+    {
+        if (step < _currentStep || ValidateStep(_currentStep))
+        {
+            _stepError = null;
+            _currentStep = step;
+        }
+    }
+
+    private void NextStep()
+    {
+        if (ValidateStep(_currentStep))
+        {
+            _stepError = null;
+            if (_currentStep < 5)
+            {
+                _currentStep++;
+            }
+        }
+    }
+
+    private void PreviousStep()
+    {
+        _stepError = null;
+        if (_currentStep > 1)
+        {
+            _currentStep--;
+        }
+    }
+
+    private bool ValidateStep(int step)
+    {
+        _stepError = null;
+        switch (step)
+        {
+            case 1:
+                if (string.IsNullOrWhiteSpace(Contact.FirstName))
+                {
+                    _stepError = "First Name is required.";
+                    return false;
+                }
+                if (string.IsNullOrWhiteSpace(Contact.LastName))
+                {
+                    _stepError = "Last Name is required.";
+                    return false;
+                }
+                if (string.IsNullOrWhiteSpace(Contact.ContactType))
+                {
+                    _stepError = "Contact Type is required.";
+                    return false;
+                }
+                return true;
+
+            case 2:
+                if (Contact.Phones.Count == 0 || Contact.Phones.All(p => string.IsNullOrWhiteSpace(p.PhoneNumber)))
+                {
+                    _stepError = "At least one valid phone number is required (Invariant I-001).";
+                    return false;
+                }
+                // Ensure exactly one is marked primary
+                if (!Contact.Phones.Any(p => p.IsPrimary))
+                {
+                    Contact.Phones[0].IsPrimary = true;
+                }
+                return true;
+
+            case 3:
+                if (Contact.Addresses.Count == 0 || Contact.Addresses.All(a => string.IsNullOrWhiteSpace(a.AddressLine1)))
+                {
+                    _stepError = "At least one valid postal address (Street, City, State, Zip) is required (Invariant I-001).";
+                    return false;
+                }
+                var invalidAddr = Contact.Addresses.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.AddressLine1) && (string.IsNullOrWhiteSpace(a.City) || string.IsNullOrWhiteSpace(a.State) || string.IsNullOrWhiteSpace(a.PostalCode)));
+                if (invalidAddr != null)
+                {
+                    _stepError = "Please complete City, State, and Postal Code for all entered addresses.";
+                    return false;
+                }
+                if (!Contact.Addresses.Any(a => a.IsPrimary))
+                {
+                    Contact.Addresses[0].IsPrimary = true;
+                }
+                return true;
+
+            case 4:
+                return true;
+
+            default:
+                return true;
+        }
+    }
+
+    private void AddPhone()
+    {
+        Contact.Phones.Add(new ContactPhoneDto
+        {
+            PhoneNumber = "",
+            Label = "Mobile",
+            IsPrimary = Contact.Phones.Count == 0
+        });
+    }
+
+    private void RemovePhone(int index)
+    {
+        if (Contact.Phones.Count > 1 && index >= 0 && index < Contact.Phones.Count)
+        {
+            var wasPrimary = Contact.Phones[index].IsPrimary;
+            Contact.Phones.RemoveAt(index);
+            if (wasPrimary && Contact.Phones.Count > 0)
+            {
+                Contact.Phones[0].IsPrimary = true;
+            }
+        }
+    }
+
+    private void SetPrimaryPhone(int index)
+    {
+        for (int i = 0; i < Contact.Phones.Count; i++)
+        {
+            Contact.Phones[i].IsPrimary = (i == index);
+        }
+    }
+
+    private void AddAddress()
+    {
+        Contact.Addresses.Add(new ContactAddressDto
+        {
+            AddressLine1 = "",
+            City = "",
+            State = "",
+            PostalCode = "",
+            Label = "Home",
+            IsPrimary = Contact.Addresses.Count == 0
+        });
+    }
+
+    private void RemoveAddress(int index)
+    {
+        if (Contact.Addresses.Count > 1 && index >= 0 && index < Contact.Addresses.Count)
+        {
+            var wasPrimary = Contact.Addresses[index].IsPrimary;
+            Contact.Addresses.RemoveAt(index);
+            if (wasPrimary && Contact.Addresses.Count > 0)
+            {
+                Contact.Addresses[0].IsPrimary = true;
+            }
+        }
+    }
+
+    private void SetPrimaryAddress(int index)
+    {
+        for (int i = 0; i < Contact.Addresses.Count; i++)
+        {
+            Contact.Addresses[i].IsPrimary = (i == index);
+        }
+    }
+
+    private void AddEmail()
+    {
+        Contact.Emails.Add(new ContactEmailDto
+        {
+            EmailAddress = "",
+            Label = "Work",
+            IsPrimary = Contact.Emails.Count == 0
+        });
+    }
+
+    private void RemoveEmail(int index)
+    {
+        if (index >= 0 && index < Contact.Emails.Count)
+        {
+            var wasPrimary = Contact.Emails[index].IsPrimary;
+            Contact.Emails.RemoveAt(index);
+            if (wasPrimary && Contact.Emails.Count > 0)
+            {
+                Contact.Emails[0].IsPrimary = true;
+            }
+        }
+    }
+
+    private void SetPrimaryEmail(int index)
+    {
+        for (int i = 0; i < Contact.Emails.Count; i++)
+        {
+            Contact.Emails[i].IsPrimary = (i == index);
+        }
+    }
+
+    private string? FormatDate(DateOnly? date) => date?.ToString("yyyy-MM-dd");
+
+    private DateOnly? ParseDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (DateOnly.TryParse(value, out var d)) return d;
+        return null;
+    }
+
+    private async Task Save()
+    {
+        if (ValidateStep(1) && ValidateStep(2) && ValidateStep(3))
+        {
+            // Filter out blank emails if any were added but left empty
+            Contact.Emails = Contact.Emails.Where(e => !string.IsNullOrWhiteSpace(e.EmailAddress)).ToList();
+            await OnSave.InvokeAsync(Contact);
+        }
+    }
+
+    private async Task Cancel()
+    {
+        _currentStep = 1;
+        _stepError = null;
+        await OnCancel.InvokeAsync();
+    }
+}

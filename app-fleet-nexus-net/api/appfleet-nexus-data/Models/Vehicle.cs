@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace AppFleetNexus.Data.Models;
 
 public class Vehicle : BaseEntity
@@ -11,4 +13,7 @@ public class Vehicle : BaseEntity
     public string? LicenseState { get; set; }
     public string? Type { get; set; }          // "Truck", "Trailer", etc.
     public string Status { get; set; } = "Active";  // "Active", "Inactive", "Maintenance"
+
+    // Navigation
+    public ICollection<VehicleContact> ContactAssignments { get; set; } = new List<VehicleContact>();
 }

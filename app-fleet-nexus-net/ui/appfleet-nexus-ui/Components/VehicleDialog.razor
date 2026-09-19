@@ -5,20 +5,23 @@
 {
     <div class="modal-backdrop-fade show"></div>
     <div class="modal-wrapper animate-fade-in" tabindex="-1" role="dialog">
-        <div class="modal-dialog-custom" role="document">
+        <div class="modal-dialog-custom modal-dialog-lg" role="document">
             <div class="modal-content-custom">
                 <!-- Header -->
                 <div class="modal-header-custom border-bottom">
-                    <h5 class="fw-bold text-dark mb-0">
-                        @if (Vehicle.Id == Guid.Empty)
-                        {
-                            <span><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Vehicle</span>
-                        }
-                        else
-                        {
-                            <span><i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle (Unit @Vehicle.UnitNumber)</span>
-                        }
-                    </h5>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            @if (Vehicle.Id == Guid.Empty)
+                            {
+                                <span><i class="bi bi-plus-circle-fill text-primary me-2"></i>Add Vehicle</span>
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle (Unit @Vehicle.UnitNumber)</span>
+                            }
+                        </h5>
+                        <p class="text-muted small mb-0">Configure vehicle specifications, driver/contact assignments, and garage location.</p>
+                    </div>
                     <button type="button" class="btn-close-custom" @onclick="Cancel" aria-label="Close" disabled="@IsSubmitting">
                         <i class="bi bi-x-lg"></i>
                     </button>
@@ -29,84 +32,204 @@
                     <DataAnnotationsValidator />
 
                     <div class="modal-body-custom py-3">
-                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        @if (!string.IsNullOrEmpty(ErrorMessage) || !string.IsNullOrEmpty(_localError))
                         {
                             <div class="alert alert-danger-custom mb-3 animate-fade-in" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                <span>@ErrorMessage</span>
+                                <span>@(ErrorMessage ?? _localError)</span>
                             </div>
                         }
 
-                        <div class="row g-3">
-                            <!-- Unit Number -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Unit Number <span class="text-danger">*</span></label>
-                                <InputText @bind-Value="Vehicle.UnitNumber" class="form-control-custom" placeholder="e.g. 101, TR-20" disabled="@IsSubmitting" />
-                                <ValidationMessage For="@(() => Vehicle.UnitNumber)" class="text-danger small mt-1 d-block" />
+                        <!-- Section 1: Specifications -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-truck text-primary me-2"></i>Vehicle Specifications</h6>
+                            <div class="row g-3">
+                                <!-- Unit Number -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Unit Number <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="Vehicle.UnitNumber" class="form-control-custom" placeholder="e.g. 101, TR-20" disabled="@IsSubmitting" />
+                                    <ValidationMessage For="@(() => Vehicle.UnitNumber)" class="text-danger small mt-1 d-block" />
+                                </div>
+
+                                <!-- Vehicle Type -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Type</label>
+                                    <InputSelect @bind-Value="Vehicle.Type" class="form-select-custom" disabled="@IsSubmitting">
+                                        <option value="">Select Type...</option>
+                                        <option value="Truck">Truck</option>
+                                        <option value="Trailer">Trailer</option>
+                                        <option value="Van">Van</option>
+                                        <option value="Sedan">Sedan</option>
+                                        <option value="SUV">SUV</option>
+                                        <option value="Other">Other</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => Vehicle.Type)" class="text-danger small mt-1 d-block" />
+                                </div>
+
+                                <!-- Status -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Status</label>
+                                    <InputSelect @bind-Value="Vehicle.Status" class="form-select-custom" disabled="@IsSubmitting">
+                                        <option value="Active">Active</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => Vehicle.Status)" class="text-danger small mt-1 d-block" />
+                                </div>
+
+                                <!-- Make -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Make</label>
+                                    <InputText @bind-Value="Vehicle.Make" class="form-control-custom" placeholder="e.g. Ford, Freightliner" disabled="@IsSubmitting" />
+                                </div>
+
+                                <!-- Model -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Model</label>
+                                    <InputText @bind-Value="Vehicle.Model" class="form-control-custom" placeholder="e.g. Cascadia, F-250" disabled="@IsSubmitting" />
+                                </div>
+
+                                <!-- Year -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">Year</label>
+                                    <InputNumber @bind-Value="Vehicle.Year" class="form-control-custom" placeholder="e.g. 2024" disabled="@IsSubmitting" />
+                                    <ValidationMessage For="@(() => Vehicle.Year)" class="text-danger small mt-1 d-block" />
+                                </div>
+
+                                <!-- VIN -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold text-muted small">VIN (17 characters)</label>
+                                    <InputText @bind-Value="Vehicle.Vin" class="form-control-custom" placeholder="Enter VIN" disabled="@IsSubmitting" />
+                                </div>
+
+                                <!-- License Plate -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small">License Plate</label>
+                                    <InputText @bind-Value="Vehicle.LicensePlate" class="form-control-custom" placeholder="e.g. TX-12345" disabled="@IsSubmitting" />
+                                </div>
+
+                                <!-- License State -->
+                                <div class="col-md-2">
+                                    <label class="form-label fw-semibold text-muted small">State</label>
+                                    <InputText @bind-Value="Vehicle.LicenseState" class="form-control-custom" maxlength="2" placeholder="TX" disabled="@IsSubmitting" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Contact Assignments (Invariant I-002) -->
+                        <div class="mb-4 pt-3 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">
+                                        <i class="bi bi-people-fill text-primary me-2"></i>Contact Assignments <span class="text-danger">*</span>
+                                    </h6>
+                                    <p class="text-muted small mb-0">At least one contact must be assigned to this vehicle (Invariant I-002 / AC-011).</p>
+                                </div>
                             </div>
 
-                            <!-- Vehicle Type -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Type</label>
-                                <InputSelect @bind-Value="Vehicle.Type" class="form-select-custom" disabled="@IsSubmitting">
-                                    <option value="">Select Type...</option>
-                                    <option value="Truck">Truck</option>
-                                    <option value="Trailer">Trailer</option>
-                                    <option value="Van">Van</option>
-                                    <option value="Sedan">Sedan</option>
-                                    <option value="SUV">SUV</option>
-                                    <option value="Other">Other</option>
-                                </InputSelect>
-                                <ValidationMessage For="@(() => Vehicle.Type)" class="text-danger small mt-1 d-block" />
+                            <!-- Assignment Picker Row -->
+                            <div class="card p-3 mb-3 bg-light border rounded-3 shadow-2xs">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-5">
+                                        <label class="form-label fw-semibold text-muted small mb-1">Select Contact</label>
+                                        <select class="form-select-custom" @bind="_selectedContactId">
+                                            <option value="">Choose a contact...</option>
+                                            @foreach (var c in AvailableContacts)
+                                            {
+                                                <option value="@c.Id">@c.FullName (@c.ContactType)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold text-muted small mb-1">Role</label>
+                                        <select class="form-select-custom" @bind="_selectedRole">
+                                            <option value="Driver">Driver</option>
+                                            <option value="ResponsibleContact">Responsible Contact</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="button" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-1" @onclick="AddContactAssignment">
+                                            <i class="bi bi-person-plus"></i> Assign
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Make -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Make</label>
-                                <InputText @bind-Value="Vehicle.Make" class="form-control-custom" placeholder="e.g. Ford, Chevrolet" disabled="@IsSubmitting" />
+                            <!-- Current Assignments List -->
+                            @if (Vehicle.AssignedContacts.Count > 0)
+                            {
+                                <div class="table-responsive border rounded-3 bg-white">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Contact Name</th>
+                                                <th>Role</th>
+                                                <th>Primary Contact</th>
+                                                <th class="text-end">Remove</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @for (int i = 0; i < Vehicle.AssignedContacts.Count; i++)
+                                            {
+                                                var index = i;
+                                                var assignment = Vehicle.AssignedContacts[index];
+                                                <tr>
+                                                    <td class="fw-semibold text-dark">
+                                                        @(assignment.ContactFullName ?? AvailableContacts.FirstOrDefault(c => c.Id == assignment.ContactId)?.FullName ?? "Assigned Contact")
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark border">@assignment.AssociationRole</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="form-check form-switch mb-0">
+                                                            <input class="form-check-input" type="checkbox" checked="@assignment.IsPrimary" @onchange="() => SetPrimaryAssignment(index)" id="@($"vc-primary-{index}")">
+                                                            <label class="form-check-label small" for="@($"vc-primary-{index}")">
+                                                                @(assignment.IsPrimary ? "Primary" : "Alternate")
+                                                            </label>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <button type="button" class="btn-icon text-danger" @onclick="() => RemoveAssignment(index)" title="Remove contact">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning-custom py-2 px-3 small d-flex align-items-center gap-2">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <span>No contacts assigned yet. Please select and assign at least one contact above before saving.</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Section 3: Garage Location (Optional) -->
+                        <div class="pt-3 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Primary Garage Location (Optional)</h6>
+                                    <p class="text-muted small mb-0">Specify the primary parking depot or base garage for this vehicle.</p>
+                                </div>
                             </div>
 
-                            <!-- Model -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Model</label>
-                                <InputText @bind-Value="Vehicle.Model" class="form-control-custom" placeholder="e.g. F-150, Transit" disabled="@IsSubmitting" />
-                            </div>
-
-                            <!-- Year -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Year</label>
-                                <InputNumber @bind-Value="Vehicle.Year" class="form-control-custom" placeholder="e.g. 2023" disabled="@IsSubmitting" />
-                                <ValidationMessage For="@(() => Vehicle.Year)" class="text-danger small mt-1 d-block" />
-                            </div>
-
-                            <!-- Status -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">Status</label>
-                                <InputSelect @bind-Value="Vehicle.Status" class="form-select-custom" disabled="@IsSubmitting">
-                                    <option value="Active">Active</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Inactive">Inactive</option>
-                                </InputSelect>
-                                <ValidationMessage For="@(() => Vehicle.Status)" class="text-danger small mt-1 d-block" />
-                            </div>
-
-                            <!-- VIN -->
-                            <div class="col-md-12">
-                                <label class="form-label fw-semibold text-muted small">VIN (17 characters)</label>
-                                <InputText @bind-Value="Vehicle.Vin" class="form-control-custom" placeholder="Enter Vehicle Identification Number" disabled="@IsSubmitting" />
-                            </div>
-
-                            <!-- License Plate -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">License Plate</label>
-                                <InputText @bind-Value="Vehicle.LicensePlate" class="form-control-custom" placeholder="e.g. TX-12345" disabled="@IsSubmitting" />
-                            </div>
-
-                            <!-- License State -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-muted small">License State (2-letter)</label>
-                                <InputText @bind-Value="Vehicle.LicenseState" class="form-control-custom" placeholder="e.g. TX" disabled="@IsSubmitting" />
-                                <ValidationMessage For="@(() => Vehicle.LicenseState)" class="text-danger small mt-1 d-block" />
+                            <div class="row g-2">
+                                <div class="col-md-12">
+                                    <input type="text" class="form-control-custom" placeholder="Garage Street Address (e.g. 100 Fleet Depot Way)" @bind="_garageAddressLine1" />
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control-custom" placeholder="City" @bind="_garageCity" />
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control-custom" placeholder="State" @bind="_garageState" />
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control-custom" placeholder="Postal Code" @bind="_garagePostalCode" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -116,7 +239,7 @@
                         <button type="button" class="btn btn-outline-secondary px-4 py-2" @onclick="Cancel" disabled="@IsSubmitting">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2" disabled="@IsSubmitting">
+                        <button type="submit" class="btn btn-primary px-4 py-2 d-flex align-items-center gap-2 shadow-sm" disabled="@IsSubmitting">
                             @if (IsSubmitting)
                             {
                                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -138,18 +261,142 @@
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public VehicleDto Vehicle { get; set; } = new();
+    [Parameter] public List<ContactSummaryDto> AvailableContacts { get; set; } = new();
     [Parameter] public bool IsSubmitting { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public EventCallback<VehicleDto> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
+    private string _selectedContactId = "";
+    private string _selectedRole = "Driver";
+    private string? _localError;
+
+    // Garage address fields
+    private string _garageAddressLine1 = "";
+    private string _garageCity = "";
+    private string _garageState = "";
+    private string _garagePostalCode = "";
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            _localError = null;
+            if (Vehicle.AssignedContacts == null)
+            {
+                Vehicle.AssignedContacts = new List<VehicleContactAssignmentDto>();
+            }
+
+            // Sync garage address if already present
+            var existingGarage = Vehicle.ContactAddresses?.FirstOrDefault(a => a.Label == "Garage" || a.IsPrimary);
+            if (existingGarage != null)
+            {
+                _garageAddressLine1 = existingGarage.AddressLine1 ?? "";
+                _garageCity = existingGarage.City ?? "";
+                _garageState = existingGarage.State ?? "";
+                _garagePostalCode = existingGarage.PostalCode ?? "";
+            }
+            else
+            {
+                _garageAddressLine1 = "";
+                _garageCity = "";
+                _garageState = "";
+                _garagePostalCode = "";
+            }
+        }
+    }
+
+    private void AddContactAssignment()
+    {
+        _localError = null;
+        if (string.IsNullOrEmpty(_selectedContactId) || !Guid.TryParse(_selectedContactId, out var contactId))
+        {
+            _localError = "Please select a contact from the dropdown to assign.";
+            return;
+        }
+
+        if (Vehicle.AssignedContacts.Any(a => a.ContactId == contactId))
+        {
+            _localError = "This contact is already assigned to this vehicle.";
+            return;
+        }
+
+        var contact = AvailableContacts.FirstOrDefault(c => c.Id == contactId);
+        Vehicle.AssignedContacts.Add(new VehicleContactAssignmentDto
+        {
+            ContactId = contactId,
+            ContactFullName = contact?.FullName,
+            AssociationRole = _selectedRole,
+            IsPrimary = Vehicle.AssignedContacts.Count == 0,
+            AssignedDate = DateTime.UtcNow
+        });
+
+        _selectedContactId = "";
+    }
+
+    private void RemoveAssignment(int index)
+    {
+        _localError = null;
+        if (index >= 0 && index < Vehicle.AssignedContacts.Count)
+        {
+            var wasPrimary = Vehicle.AssignedContacts[index].IsPrimary;
+            Vehicle.AssignedContacts.RemoveAt(index);
+            if (wasPrimary && Vehicle.AssignedContacts.Count > 0)
+            {
+                Vehicle.AssignedContacts[0].IsPrimary = true;
+            }
+        }
+    }
+
+    private void SetPrimaryAssignment(int index)
+    {
+        for (int i = 0; i < Vehicle.AssignedContacts.Count; i++)
+        {
+            Vehicle.AssignedContacts[i].IsPrimary = (i == index);
+        }
+    }
+
     private async Task Save()
     {
+        _localError = null;
+
+        // Invariant I-002: At least 1 contact must be assigned
+        if (Vehicle.AssignedContacts.Count == 0)
+        {
+            _localError = "At least one contact must be assigned to this vehicle (Invariant I-002).";
+            return;
+        }
+
+        // Ensure exactly one is primary
+        if (!Vehicle.AssignedContacts.Any(a => a.IsPrimary))
+        {
+            Vehicle.AssignedContacts[0].IsPrimary = true;
+        }
+
+        // Update garage address if entered
+        if (!string.IsNullOrWhiteSpace(_garageAddressLine1))
+        {
+            Vehicle.ContactAddresses = new List<ContactAddressDto>
+            {
+                new ContactAddressDto
+                {
+                    Label = "Garage",
+                    IsPrimary = true,
+                    AddressLine1 = _garageAddressLine1,
+                    City = _garageCity,
+                    State = _garageState,
+                    PostalCode = _garagePostalCode,
+                    Country = "USA"
+                }
+            };
+        }
+
         await OnSave.InvokeAsync(Vehicle);
     }
 
     private async Task Cancel()
     {
+        _localError = null;
         await OnCancel.InvokeAsync();
     }
 }

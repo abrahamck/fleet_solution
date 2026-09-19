@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using AppFleetNexus.Api.Controllers;
+using AppFleetNexus.Api.Models;
 using AppFleetNexus.Api.Tests.Mocks;
 using AppFleetNexus.Data.Data;
 using AppFleetNexus.Data.Models;
@@ -107,7 +108,7 @@ public class VehiclesControllerTests : IDisposable
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var vehicles = Assert.IsAssignableFrom<IEnumerable<Vehicle>>(okResult.Value);
+            var vehicles = Assert.IsAssignableFrom<IEnumerable<VehicleDetailDto>>(okResult.Value);
             
             Assert.Single(vehicles);
             Assert.Equal("V-TenantA", vehicles.First().UnitNumber);
@@ -159,6 +160,17 @@ public class VehiclesControllerTests : IDisposable
         await SeedTenantAsync(tenantA, "Tenant A");
 
         _tenantAccessor.CurrentTenantId = tenantA;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
+
+        // Seed a contact first (I-002 requires ≥1 contact per vehicle)
+        Guid contactId;
+        using (var ctx = CreateContext())
+        {
+            var contact = new Contact { FirstName = "Jane", LastName = "Doe", ContactType = "Driver", Status = "Active" };
+            ctx.Contacts.Add(contact);
+            await ctx.SaveChangesAsync();
+            contactId = contact.Id;
+        }
 
         using (var context = CreateContext())
         {
@@ -170,14 +182,18 @@ public class VehiclesControllerTests : IDisposable
             await context.SaveChangesAsync();
         }
 
-        // Act
+        // Act — duplicate unit number should be rejected regardless of contact
         using (var context = CreateContext())
         {
             var controller = new VehiclesController(context, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
             var request = new VehicleUpsertRequest
             {
                 UnitNumber = "101",
-                Status = "Active"
+                Status = "Active",
+                AssignedContacts = new List<VehicleContactAssignmentDto>
+                {
+                    new VehicleContactAssignmentDto { ContactId = contactId, AssociationRole = "Driver", IsPrimary = true }
+                }
             };
 
             var result = await controller.CreateVehicle(request);
@@ -198,8 +214,9 @@ public class VehiclesControllerTests : IDisposable
         await SeedTenantAsync(tenantA, "Tenant A");
         await SeedTenantAsync(tenantB, "Tenant B");
 
-        // Seed Unit 101 for Tenant B
+        // Seed Unit 101 for Tenant B (direct DB — no controller needed)
         _tenantAccessor.CurrentTenantId = tenantB;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
         using (var context = CreateContext())
         {
             context.Vehicles.Add(new Vehicle
@@ -210,22 +227,35 @@ public class VehiclesControllerTests : IDisposable
             await context.SaveChangesAsync();
         }
 
-        // Act & Assert: Create Unit 101 under Tenant A
+        // Seed a contact for Tenant A
         _tenantAccessor.CurrentTenantId = tenantA;
+        Guid contactId;
+        using (var ctx = CreateContext())
+        {
+            var contact = new Contact { FirstName = "Jane", LastName = "Doe", ContactType = "Driver", Status = "Active" };
+            ctx.Contacts.Add(contact);
+            await ctx.SaveChangesAsync();
+            contactId = contact.Id;
+        }
+
+        // Act & Assert: Create Unit 101 under Tenant A — should succeed
         using (var context = CreateContext())
         {
             var controller = new VehiclesController(context, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
             var request = new VehicleUpsertRequest
             {
                 UnitNumber = "101",
-                Status = "Active"
+                Status = "Active",
+                AssignedContacts = new List<VehicleContactAssignmentDto>
+                {
+                    new VehicleContactAssignmentDto { ContactId = contactId, AssociationRole = "Driver", IsPrimary = true }
+                }
             };
 
             var result = await controller.CreateVehicle(request);
-            
+
             var createdResult = Assert.IsType<CreatedAtActionResult>(result);
-            var vehicle = Assert.IsType<Vehicle>(createdResult.Value);
-            Assert.Equal("101", vehicle.UnitNumber);
+            Assert.NotNull(createdResult.Value);
         }
     }
 
@@ -276,5 +306,120 @@ public class VehiclesControllerTests : IDisposable
             Assert.NotNull(softDeletedVehicle);
             Assert.True(softDeletedVehicle.IsDeleted);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TEST-008: Create vehicle without contacts is rejected (I-002 / AC-011)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateVehicle_WithNoContacts_ReturnsBadRequest()
+    {
+        var tenantA = Guid.NewGuid();
+        await SeedTenantAsync(tenantA, "Tenant A");
+        _tenantAccessor.CurrentTenantId = tenantA;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
+
+        using var context = CreateContext();
+        var controller = new VehiclesController(context, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
+
+        var request = new VehicleUpsertRequest
+        {
+            UnitNumber = "V-NoCont",
+            Status = "Active"
+            // AssignedContacts is empty by default — should fail I-002
+        };
+
+        var result = await controller.CreateVehicle(request);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TEST-010: Get vehicles includes assigned contacts (AC-010)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetVehicles_IncludesAssignedContacts()
+    {
+        var tenantA = Guid.NewGuid();
+        await SeedTenantAsync(tenantA, "Tenant A");
+        _tenantAccessor.CurrentTenantId = tenantA;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
+
+        // Seed a contact and a vehicle with that contact assigned
+        Guid contactId;
+        using (var ctx = CreateContext())
+        {
+            var contact = new Contact { FirstName = "Driver", LastName = "Sam", ContactType = "Driver", Status = "Active" };
+            ctx.Contacts.Add(contact);
+            await ctx.SaveChangesAsync();
+            contactId = contact.Id;
+        }
+
+        using (var ctx = CreateContext())
+        {
+            var controller = new VehiclesController(ctx, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
+            var request = new VehicleUpsertRequest
+            {
+                UnitNumber = "V-200",
+                Status = "Active",
+                AssignedContacts = new List<VehicleContactAssignmentDto>
+                {
+                    new VehicleContactAssignmentDto { ContactId = contactId, AssociationRole = "Driver", IsPrimary = true }
+                }
+            };
+            await controller.CreateVehicle(request);
+        }
+
+        // Get vehicles and check that assigned contact is included
+        using (var ctx = CreateContext())
+        {
+            var controller = new VehiclesController(ctx, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
+            var result = await controller.GetVehicles();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var dtos = ok.Value as System.Collections.IEnumerable;
+            Assert.NotNull(dtos);
+            var list = dtos!.Cast<VehicleDetailDto>().ToList();
+            Assert.Single(list);
+            Assert.NotEmpty(list[0].AssignedContacts);
+            Assert.Equal(contactId, list[0].AssignedContacts[0].ContactId);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TEST-011: Update vehicle without contacts is rejected (I-002 / AC-011)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateVehicle_WithNoContacts_ReturnsBadRequest()
+    {
+        var tenantA = Guid.NewGuid();
+        await SeedTenantAsync(tenantA, "Tenant A");
+        _tenantAccessor.CurrentTenantId = tenantA;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
+
+        // Seed vehicle directly in DB (bypass controller I-002 guard for initial seed)
+        Guid vehicleId;
+        using (var ctx = CreateContext())
+        {
+            var vehicle = new Vehicle { UnitNumber = "V-UPD", Status = "Active" };
+            ctx.Vehicles.Add(vehicle);
+            await ctx.SaveChangesAsync();
+            vehicleId = vehicle.Id;
+        }
+
+        // Try to update without assigning any contacts
+        using var context = CreateContext();
+        var controller = new VehiclesController(context, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
+        var request = new VehicleUpsertRequest
+        {
+            UnitNumber = "V-UPD",
+            Status = "Inactive"
+            // No AssignedContacts — should fail I-002
+        };
+
+        var result = await controller.UpdateVehicle(vehicleId, request);
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 }

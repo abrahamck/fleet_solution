@@ -27,3 +27,5 @@ This directory contains the formal record of key architectural decisions made fo
 | [ADR-019](ADR-019-state-aware-root-routing.md) | State-Aware Dual-Mode Root Routing (`/`) | Frontend Architecture | Accepted | 2026-06-22 |
 | [ADR-020](ADR-020-unified-inventory-workspace.md) | Unified Inventory Workspace with Tabbed Sub-Modules | Frontend Architecture | Accepted | 2026-06-22 |
 | [ADR-021](ADR-021-cloud-infrastructure-topology.md) | Cloud Infrastructure & Deployment Topology | Infrastructure & DevOps | Accepted | 2026-06-20 |
+| [ADR-022](ADR-022-vehicle-contact-many-to-many-join-entity.md) | Many-to-Many Vehicle-Contact Association via Join Entity | Data Architecture | Accepted | 2026-09-19 |
+| [ADR-023](ADR-023-polymorphic-contact-point-entity.md) | Separate Typed Contact Point Tables (Phones, Emails, Addresses) | Data Architecture | Accepted | 2026-09-19 |
