@@ -218,6 +218,7 @@ public class ContactsController : ControllerBase
 
             var contact = new Contact
             {
+                Id = Guid.NewGuid(),
                 UniqueId = request.UniqueId?.Trim(),
                 FirstName = request.FirstName.Trim(),
                 MiddleName = request.MiddleName?.Trim(),
@@ -237,69 +238,81 @@ public class ContactsController : ControllerBase
             _db.Contacts.Add(contact);
 
             // Persist phones — enforce single primary
-            EnsureSinglePrimary(request.Phones);
-            foreach (var p in request.Phones)
+            if (request.Phones != null)
             {
-                _db.ContactPhones.Add(new ContactPhone
+                EnsureSinglePrimary(request.Phones);
+                foreach (var p in request.Phones)
                 {
-                    OwnerId = contact.Id,
-                    OwnerType = "Contact",
-                    Label = p.Label,
-                    IsPrimary = p.IsPrimary,
-                    PhoneNumber = p.PhoneNumber
-                });
+                    _db.ContactPhones.Add(new ContactPhone
+                    {
+                        OwnerId = contact.Id,
+                        OwnerType = "Contact",
+                        Label = p.Label,
+                        IsPrimary = p.IsPrimary,
+                        PhoneNumber = p.PhoneNumber
+                    });
+                }
             }
 
             // Persist emails
-            EnsureSinglePrimary(request.Emails);
-            foreach (var e in request.Emails)
+            if (request.Emails != null)
             {
-                _db.ContactEmails.Add(new ContactEmail
+                EnsureSinglePrimary(request.Emails);
+                foreach (var e in request.Emails)
                 {
-                    OwnerId = contact.Id,
-                    OwnerType = "Contact",
-                    Label = e.Label,
-                    IsPrimary = e.IsPrimary,
-                    EmailAddress = e.EmailAddress
-                });
+                    _db.ContactEmails.Add(new ContactEmail
+                    {
+                        OwnerId = contact.Id,
+                        OwnerType = "Contact",
+                        Label = e.Label,
+                        IsPrimary = e.IsPrimary,
+                        EmailAddress = e.EmailAddress
+                    });
+                }
             }
 
             // Persist addresses — enforce single primary
-            EnsureSinglePrimary(request.Addresses);
-            foreach (var a in request.Addresses)
+            if (request.Addresses != null)
             {
-                _db.ContactAddresses.Add(new ContactAddress
+                EnsureSinglePrimary(request.Addresses);
+                foreach (var a in request.Addresses)
                 {
-                    OwnerId = contact.Id,
-                    OwnerType = "Contact",
-                    Label = a.Label,
-                    IsPrimary = a.IsPrimary,
-                    AddressLine1 = a.AddressLine1,
-                    AddressLine2 = a.AddressLine2,
-                    AddressLine3 = a.AddressLine3,
-                    AddressLine4 = a.AddressLine4,
-                    City = a.City,
-                    State = a.State,
-                    PostalCode = a.PostalCode,
-                    Country = a.Country
-                });
+                    _db.ContactAddresses.Add(new ContactAddress
+                    {
+                        OwnerId = contact.Id,
+                        OwnerType = "Contact",
+                        Label = a.Label,
+                        IsPrimary = a.IsPrimary,
+                        AddressLine1 = a.AddressLine1,
+                        AddressLine2 = a.AddressLine2,
+                        AddressLine3 = a.AddressLine3,
+                        AddressLine4 = a.AddressLine4,
+                        City = a.City,
+                        State = a.State,
+                        PostalCode = a.PostalCode,
+                        Country = string.IsNullOrWhiteSpace(a.Country) ? "USA" : a.Country
+                    });
+                }
             }
 
             // Optional vehicle assignments
-            foreach (var va in request.VehicleAssignments)
+            if (request.VehicleAssignments != null)
             {
-                var vehicleExists = await _db.Vehicles.AnyAsync(v => v.Id == va.VehicleId);
-                if (!vehicleExists)
-                    return BadRequest(new { message = $"Vehicle {va.VehicleId} not found or not accessible." });
-
-                _db.VehicleContacts.Add(new VehicleContact
+                foreach (var va in request.VehicleAssignments)
                 {
-                    VehicleId = va.VehicleId,
-                    ContactId = contact.Id,
-                    AssociationRole = va.AssociationRole,
-                    IsPrimary = va.IsPrimary,
-                    AssignedDate = DateTime.UtcNow
-                });
+                    var vehicleExists = await _db.Vehicles.AnyAsync(v => v.Id == va.VehicleId);
+                    if (!vehicleExists)
+                        return BadRequest(new { message = $"Vehicle {va.VehicleId} not found or not accessible." });
+
+                    _db.VehicleContacts.Add(new VehicleContact
+                    {
+                        VehicleId = va.VehicleId,
+                        ContactId = contact.Id,
+                        AssociationRole = va.AssociationRole,
+                        IsPrimary = va.IsPrimary,
+                        AssignedDate = DateTime.UtcNow
+                    });
+                }
             }
 
             await _db.SaveChangesAsync();
@@ -378,17 +391,20 @@ public class ContactsController : ControllerBase
                 .ToListAsync();
             foreach (var ep in existingPhones) _db.ContactPhones.Remove(ep);
 
-            EnsureSinglePrimary(request.Phones);
-            foreach (var p in request.Phones)
+            if (request.Phones != null)
             {
-                _db.ContactPhones.Add(new ContactPhone
+                EnsureSinglePrimary(request.Phones);
+                foreach (var p in request.Phones)
                 {
-                    OwnerId = id,
-                    OwnerType = "Contact",
-                    Label = p.Label,
-                    IsPrimary = p.IsPrimary,
-                    PhoneNumber = p.PhoneNumber
-                });
+                    _db.ContactPhones.Add(new ContactPhone
+                    {
+                        OwnerId = id,
+                        OwnerType = "Contact",
+                        Label = p.Label,
+                        IsPrimary = p.IsPrimary,
+                        PhoneNumber = p.PhoneNumber
+                    });
+                }
             }
 
             // Sync emails
@@ -397,17 +413,20 @@ public class ContactsController : ControllerBase
                 .ToListAsync();
             foreach (var ee in existingEmails) _db.ContactEmails.Remove(ee);
 
-            EnsureSinglePrimary(request.Emails);
-            foreach (var e in request.Emails)
+            if (request.Emails != null)
             {
-                _db.ContactEmails.Add(new ContactEmail
+                EnsureSinglePrimary(request.Emails);
+                foreach (var e in request.Emails)
                 {
-                    OwnerId = id,
-                    OwnerType = "Contact",
-                    Label = e.Label,
-                    IsPrimary = e.IsPrimary,
-                    EmailAddress = e.EmailAddress
-                });
+                    _db.ContactEmails.Add(new ContactEmail
+                    {
+                        OwnerId = id,
+                        OwnerType = "Contact",
+                        Label = e.Label,
+                        IsPrimary = e.IsPrimary,
+                        EmailAddress = e.EmailAddress
+                    });
+                }
             }
 
             // Sync addresses
@@ -416,24 +435,27 @@ public class ContactsController : ControllerBase
                 .ToListAsync();
             foreach (var ea in existingAddresses) _db.ContactAddresses.Remove(ea);
 
-            EnsureSinglePrimary(request.Addresses);
-            foreach (var a in request.Addresses)
+            if (request.Addresses != null)
             {
-                _db.ContactAddresses.Add(new ContactAddress
+                EnsureSinglePrimary(request.Addresses);
+                foreach (var a in request.Addresses)
                 {
-                    OwnerId = id,
-                    OwnerType = "Contact",
-                    Label = a.Label,
-                    IsPrimary = a.IsPrimary,
-                    AddressLine1 = a.AddressLine1,
-                    AddressLine2 = a.AddressLine2,
-                    AddressLine3 = a.AddressLine3,
-                    AddressLine4 = a.AddressLine4,
-                    City = a.City,
-                    State = a.State,
-                    PostalCode = a.PostalCode,
-                    Country = a.Country
-                });
+                    _db.ContactAddresses.Add(new ContactAddress
+                    {
+                        OwnerId = id,
+                        OwnerType = "Contact",
+                        Label = a.Label,
+                        IsPrimary = a.IsPrimary,
+                        AddressLine1 = a.AddressLine1,
+                        AddressLine2 = a.AddressLine2,
+                        AddressLine3 = a.AddressLine3,
+                        AddressLine4 = a.AddressLine4,
+                        City = a.City,
+                        State = a.State,
+                        PostalCode = a.PostalCode,
+                        Country = string.IsNullOrWhiteSpace(a.Country) ? "USA" : a.Country
+                    });
+                }
             }
 
             // Sync vehicle assignments
@@ -442,20 +464,23 @@ public class ContactsController : ControllerBase
                 .ToListAsync();
             foreach (var ea in existingAssignments) _db.VehicleContacts.Remove(ea);
 
-            foreach (var va in request.VehicleAssignments)
+            if (request.VehicleAssignments != null)
             {
-                var vehicleExists = await _db.Vehicles.AnyAsync(v => v.Id == va.VehicleId);
-                if (!vehicleExists)
-                    return BadRequest(new { message = $"Vehicle {va.VehicleId} not found or not accessible." });
-
-                _db.VehicleContacts.Add(new VehicleContact
+                foreach (var va in request.VehicleAssignments)
                 {
-                    VehicleId = va.VehicleId,
-                    ContactId = id,
-                    AssociationRole = va.AssociationRole,
-                    IsPrimary = va.IsPrimary,
-                    AssignedDate = DateTime.UtcNow
-                });
+                    var vehicleExists = await _db.Vehicles.AnyAsync(v => v.Id == va.VehicleId);
+                    if (!vehicleExists)
+                        return BadRequest(new { message = $"Vehicle {va.VehicleId} not found or not accessible." });
+
+                    _db.VehicleContacts.Add(new VehicleContact
+                    {
+                        VehicleId = va.VehicleId,
+                        ContactId = id,
+                        AssociationRole = va.AssociationRole,
+                        IsPrimary = va.IsPrimary,
+                        AssignedDate = DateTime.UtcNow
+                    });
+                }
             }
 
             await _db.SaveChangesAsync();
