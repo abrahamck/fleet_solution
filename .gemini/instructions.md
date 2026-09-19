@@ -28,9 +28,19 @@ app-fleet-nexus-net/
 
 ### Key Architecture Documents
 
+- `docs/ADR/README.md` — Master Architecture Decision Records (ADR) index
 - `docs/SecurityArchitectureDecision.md` — All security architecture decisions with reasoning
 - `docs/implementation/SecurityImplementationPlan.md` — Phased implementation plan with DB schema
 - `docs/infrastructure_architecture.md` — Production hosting & deployment architecture
+
+---
+
+## Architecture Governance & Decision Records (ADR)
+
+- **Mandatory Alignment Check**: Before drafting an implementation plan or writing code for any **major feature, data model/schema change, library adoption, or architectural shift**, the agent MUST invoke the `record-adr` skill to scan existing ADRs in `docs/ADR/` to ensure compliance with established architectural invariants.
+- **Proactive ADR Creation**: If the proposed work introduces a novel architectural pattern, new data model/entity, new library, or modifies an established direction, a new ADR must be drafted (with status `Proposed`) alongside the implementation plan using the `record-adr` skill.
+- **Architectural Citation**: Implementation plans must explicitly cite governing ADRs in their architectural alignment section.
+- **Bypass Rule**: Routine bug fixes, minor UI styling/CSS tweaks, and unit test additions do not require an ADR review.
 
 ---
 
