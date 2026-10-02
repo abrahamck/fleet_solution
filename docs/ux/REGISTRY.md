@@ -151,6 +151,43 @@ verified_commit: b0056c6
 
 ---
 
+### ReassignModal
+
+```yaml
+name: ReassignModal
+path: app-fleet-nexus-net/ui/appfleet-nexus-ui/Components/ReassignModal.razor
+kind: orchestrator
+purpose: >-
+  Quick reassignment dialog for a vehicle: displays current active primary and
+  secondary contacts, mode selector (Replace Primary vs. Add Co-Driver),
+  contact picker with CDL compliance indicator badges (INV-009), and submits to
+  the dedicated POST /api/vehicles/{id}/reassign endpoint.
+data_fields:
+  - Vehicle: VehicleDto? — the vehicle whose assignments are being modified
+  - IsVisible: bool — controls dialog visibility
+props:
+  - IsVisible: bool [Parameter] (default: false)
+  - Vehicle: VehicleDto? [Parameter] (default: null)
+  - AvailableContacts: List<ContactSummaryDto> [Parameter] (default: empty list)
+  - OnSaved: EventCallback [Parameter] — fires after successful reassignment
+  - OnCancel: EventCallback [Parameter] — fires on modal cancel/close
+slots: []
+variants: []
+states:
+  - default
+  - submitting (inputs disabled, spinner displayed)
+  - error (top-level alert)
+a11y_notes: >-
+  Dialog uses role="dialog", aria-modal="true", and aria-labelledby. Close button
+  has aria-label="Close". Radio cards for mode selection use native radio buttons
+  with descriptive labels.
+status: active
+deprecation_reason: ~
+verified_commit: working-tree
+```
+
+---
+
 ## Open Findings (tracked from Mode 3 / Mode 4 runs)
 
 These findings were identified during registry bootstrap. Address in planned work.
