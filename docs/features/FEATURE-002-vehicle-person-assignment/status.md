@@ -5,7 +5,7 @@
 | Attribute | Value |
 | :--- | :--- |
 | **Feature ID** | `FEATURE-002-vehicle-person-assignment` |
-| **Current Phase** | `READY_FOR_IMPLEMENTATION` |
+| **Current Phase** | `READY_FOR_MERGE` |
 | **Complexity** | `STANDARD` |
 | **Created** | 2026-10-01 |
 | **Author** | AI Planning Agent |
@@ -25,7 +25,7 @@ flowchart LR
     style G2 fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
     style G3 fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
     style G4 fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
-    style G5 fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    style G5 fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
 ```
 
 | Phase | Status | Approval Date | Notes |
@@ -34,7 +34,7 @@ flowchart LR
 | **2. Architecture & Design** | `APPROVED` | 2026-10-01 | Approved after critical review: dropped UnassignedDate, fixed delete-and-recreate tech debt, confirmed INV-005 exists. |
 | **3. Plan & Tasks** | `APPROVED` | 2026-10-02 | Implementation plan, independent test plan, initialized evidence matrix, and 6 task contracts approved by Human. |
 | **4. Task Breakdown & Execution** | `APPROVED` | 2026-10-02 | Phase 1 Backend & Data (Tasks 001–003) executed and VERIFIED. Tasks 004–006 deferred to Phase 2. |
-| **5. Review & Final Sign-Off** | `IN_REVIEW` | — | Review report prepared for Human Final Approval & Merge. |
+| **5. Review & Final Sign-Off** | `APPROVED` | 2026-10-02 | Signed off by Human. Phase 1 backend deliverable approved for merge/deployment. |
 
 ---
 
