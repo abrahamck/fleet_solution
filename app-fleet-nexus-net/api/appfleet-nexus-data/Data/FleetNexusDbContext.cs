@@ -178,6 +178,12 @@ public class FleetNexusDbContext : DbContext
             .HasIndex(vc => vc.TenantId)
             .HasFilter("\"IsDeleted\" = false");
 
+        // Partial unique index preventing duplicate active assignments (INV-004, ADR-017)
+        modelBuilder.Entity<VehicleContact>()
+            .HasIndex(vc => new { vc.VehicleId, vc.ContactId })
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
         // ─── Default values ───
         modelBuilder.Entity<Vehicle>()
             .Property(v => v.Status)
