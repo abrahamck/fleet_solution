@@ -28,3 +28,19 @@ public class VehicleDetailDto
     /// <summary>Primary garage address (denormalized for convenience).</summary>
     public string? PrimaryGarageAddress { get; set; }
 }
+
+/// <summary>
+/// Request DTO for reassigning a vehicle (FEATURE-002).
+/// </summary>
+public class ReassignVehicleRequest
+{
+    [Required]
+    public Guid NewContactId { get; set; }
+
+    /// <summary>Driver | ResponsibleContact</summary>
+    public string AssociationRole { get; set; } = "Driver";
+
+    /// <summary>ReplacePrimary | AddSecondary</summary>
+    [Required]
+    public string ReassignMode { get; set; } = "ReplacePrimary";
+}
