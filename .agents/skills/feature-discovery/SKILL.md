@@ -31,6 +31,10 @@ flowchart TD
     D --> E[Step 4: Draft requirements.md from Template]
     E --> F[Step 5: Identify Open Questions & Unclear Assumptions]
     F --> G[Step 6: Request Human Gate 1 Approval]
+    G --> H{Feature has UI surface?}
+    H -->|Yes| I[UX Design — ux-engineer skill]
+    H -->|No| J[Architecture Analysis — architecture-analysis skill]
+    I --> J
 ```
 
 ### Step 1: Assign Feature ID & Complexity Classification
@@ -62,4 +66,9 @@ Fill out all sections:
 
 ### Step 5: Human Gate 1 Sign-Off
 Present the drafted `requirements.md` to the human user for explicit approval.
-**Do NOT proceed to Architecture or Planning until Human Gate 1 is marked `APPROVED`.**
+**Do NOT proceed to UX Design or Architecture until Human Gate 1 is marked `APPROVED`.**
+
+### Step 6: Signal Next Stage
+After Gate 1 is approved, declare the next stage explicitly:
+- **Feature has a UI surface** (new screen, new component, change to existing UI): invoke the `ux-engineer` skill to produce UX design before architecture analysis begins. Update `status.md` to `UX_DESIGN`.
+- **No UI surface** (pure API, data, or backend change): proceed directly to `architecture-analysis` skill. Update `status.md` to `ARCHITECTURE_REVIEW`.
