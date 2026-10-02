@@ -320,12 +320,21 @@ public class VehiclesController : ControllerBase
             vehicle.Type = request.Type?.Trim();
             vehicle.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
 
-            // Sync contact assignments
+            // Sync contact assignments (Diff-based sync — TD-001, INV-007)
             var existingAssignments = await _dbContext.VehicleContacts
                 .Where(vc => vc.VehicleId == id)
                 .ToListAsync();
-            foreach (var ea in existingAssignments) _dbContext.VehicleContacts.Remove(ea);
 
+            var requestedContactIds = request.AssignedContacts.Select(ca => ca.ContactId).ToHashSet();
+
+            // 1. Soft-delete removed assignments
+            var toRemove = existingAssignments.Where(ea => !requestedContactIds.Contains(ea.ContactId)).ToList();
+            foreach (var ea in toRemove)
+            {
+                _dbContext.VehicleContacts.Remove(ea);
+            }
+
+            // 2. Retain existing or insert new assignments
             bool hasSetPrimary = false;
             foreach (var ca in request.AssignedContacts)
             {
@@ -335,14 +344,24 @@ public class VehiclesController : ControllerBase
                     isPrimary = true;
                     hasSetPrimary = true;
                 }
-                _dbContext.VehicleContacts.Add(new VehicleContact
+
+                var existing = existingAssignments.FirstOrDefault(ea => ea.ContactId == ca.ContactId);
+                if (existing != null)
                 {
-                    VehicleId = id,
-                    ContactId = ca.ContactId,
-                    AssociationRole = ca.AssociationRole,
-                    IsPrimary = isPrimary,
-                    AssignedDate = DateTime.UtcNow
-                });
+                    existing.AssociationRole = ca.AssociationRole;
+                    existing.IsPrimary = isPrimary;
+                }
+                else
+                {
+                    _dbContext.VehicleContacts.Add(new VehicleContact
+                    {
+                        VehicleId = id,
+                        ContactId = ca.ContactId,
+                        AssociationRole = ca.AssociationRole,
+                        IsPrimary = isPrimary,
+                        AssignedDate = DateTime.UtcNow
+                    });
+                }
             }
 
             // Sync vehicle contact addresses
@@ -453,6 +472,123 @@ public class VehiclesController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving contacts for vehicle {VehicleId}", id);
             return StatusCode(500, new { message = "An error occurred." });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // POST /api/vehicles/{id}/reassign
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [HttpPost("{id:guid}/reassign")]
+    public async Task<IActionResult> ReassignVehicle(Guid id, [FromBody] ReassignVehicleRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var vehicle = await _dbContext.Vehicles.FindAsync(id);
+            if (vehicle == null)
+                return NotFound(new { message = "Vehicle not found." });
+
+            var contact = await _dbContext.Contacts.FindAsync(request.NewContactId);
+            if (contact == null)
+                return NotFound(new { message = "Contact not found or not accessible." });
+
+            var mode = request.ReassignMode?.Trim();
+            if (mode != "ReplacePrimary" && mode != "AddSecondary")
+            {
+                return BadRequest(new { message = "Invalid ReassignMode. Must be 'ReplacePrimary' or 'AddSecondary'." });
+            }
+
+            var activeAssignments = await _dbContext.VehicleContacts
+                .Where(vc => vc.VehicleId == id)
+                .ToListAsync();
+
+            var targetRole = string.IsNullOrWhiteSpace(request.AssociationRole) ? "Driver" : request.AssociationRole.Trim();
+            var existingTargetAssignment = activeAssignments.FirstOrDefault(vc => vc.ContactId == request.NewContactId);
+
+            if (mode == "ReplacePrimary")
+            {
+                // Soft-delete current primary assignment(s) if not the target contact
+                var currentPrimaries = activeAssignments
+                    .Where(vc => vc.IsPrimary && vc.ContactId != request.NewContactId)
+                    .ToList();
+
+                foreach (var primary in currentPrimaries)
+                {
+                    _dbContext.VehicleContacts.Remove(primary);
+                }
+
+                if (existingTargetAssignment != null)
+                {
+                    // Target contact is already assigned (e.g. secondary) -> promote in-place (INV-004)
+                    existingTargetAssignment.IsPrimary = true;
+                    existingTargetAssignment.AssociationRole = targetRole;
+                }
+                else
+                {
+                    // Target contact is not yet assigned -> insert new primary
+                    _dbContext.VehicleContacts.Add(new VehicleContact
+                    {
+                        VehicleId = id,
+                        ContactId = request.NewContactId,
+                        AssociationRole = targetRole,
+                        IsPrimary = true,
+                        AssignedDate = DateTime.UtcNow
+                    });
+                }
+            }
+            else // "AddSecondary"
+            {
+                if (existingTargetAssignment != null)
+                {
+                    // Target contact is already assigned -> update role (leave IsPrimary as-is or false)
+                    existingTargetAssignment.AssociationRole = targetRole;
+                }
+                else
+                {
+                    // Add as secondary contact
+                    _dbContext.VehicleContacts.Add(new VehicleContact
+                    {
+                        VehicleId = id,
+                        ContactId = request.NewContactId,
+                        AssociationRole = targetRole,
+                        IsPrimary = false,
+                        AssignedDate = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            var tenantId = _tenantAccessor.CurrentTenantId;
+            _cache.Remove($"dashboard_kpis_{tenantId}");
+
+            var updatedAssignments = await _dbContext.VehicleContacts
+                .Include(vc => vc.Contact)
+                .Where(vc => vc.VehicleId == id)
+                .Select(vc => new VehicleContactAssignmentDto
+                {
+                    Id = vc.Id,
+                    VehicleId = vc.VehicleId,
+                    ContactId = vc.ContactId,
+                    ContactFullName = vc.Contact.FirstName + " " + vc.Contact.LastName,
+                    AssociationRole = vc.AssociationRole,
+                    IsPrimary = vc.IsPrimary,
+                    AssignedDate = vc.AssignedDate
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Vehicle {VehicleId} reassigned: Mode {Mode}, Target Contact {ContactId}",
+                id, mode, request.NewContactId);
+
+            return Ok(updatedAssignments);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reassigning vehicle {VehicleId}", id);
+            return StatusCode(500, new { message = "An error occurred while reassigning the vehicle." });
         }
     }
 

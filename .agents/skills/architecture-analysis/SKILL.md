@@ -1,8 +1,9 @@
 ---
 name: architecture-analysis
 description: >-
-  Use after requirements are approved to inspect existing repository architecture,
-  evaluate active ADRs, determine design patterns, and produce a formal design.md artifact.
+  Use after requirements are approved (and after UX design is complete for features
+  with a UI surface) to inspect existing repository architecture, evaluate active ADRs,
+  determine design patterns, and produce a formal design.md artifact.
   Triggers record-adr for novel decisions and enforces Human Gate 2.
 ---
 
@@ -14,7 +15,7 @@ This skill governs the Architectural Evaluation, Pattern Alignment, and Design S
 
 ## 1. Operating Rules & Boundaries
 
-1. **Precondition Enforcement**: NEVER begin architecture analysis until `requirements.md` is approved by the human (Human Gate 1).
+1. **Precondition Enforcement**: NEVER begin architecture analysis until `requirements.md` is approved by the human (Human Gate 1). For features with a UI surface, also confirm that the `ux-engineer` skill has completed UX design (`status.md` must be past `UX_DESIGN`, i.e., in state `ARCHITECTURE_REVIEW` or later).
 2. **Pattern Reuse Over Invention**: Prefer existing architectural abstractions, repository conventions, and security patterns unless there is a documented reason to deviate.
 3. **Mandatory ADR Check**: Evaluate all matching ADRs in `docs/ADR/README.md`. If a new pattern or architectural shift is introduced, invoke the `record-adr` skill.
 4. **Artifact Production**: Write durable artifacts to `docs/features/FEATURE-XXX/design.md` and update `status.md` to `ARCHITECTURE_REVIEW`.
@@ -25,14 +26,17 @@ This skill governs the Architectural Evaluation, Pattern Alignment, and Design S
 
 ```mermaid
 flowchart TD
-    A[Approved requirements.md] --> B[Step 1: Inspect Active ADRs in docs/ADR/]
-    B --> C[Step 2: Inspect Codebase Patterns in app-fleet-nexus-net]
-    C --> D{Requires Novel Architectural Decision?}
-    D -->|Yes| E[Step 3: Invoke record-adr Skill -> Draft Proposed ADR]
-    D -->|No| F[Step 3: Reference Existing ADRs]
-    E --> G[Step 4: Draft design.md from Template]
-    F --> G
-    G --> H[Step 5: Request Human Gate 2 Approval]
+    A[Approved requirements.md] --> B{Feature has UI surface?}
+    B -->|Yes| BU[Confirm UX Design complete\nux-engineer skill / status: UX_DESIGN done]
+    B -->|No| C
+    BU --> C[Step 1: Inspect Active ADRs in docs/ADR/]
+    C --> D[Step 2: Inspect Codebase Patterns in app-fleet-nexus-net]
+    D --> E{Requires Novel Architectural Decision?}
+    E -->|Yes| F[Step 3: Invoke record-adr Skill -> Draft Proposed ADR]
+    E -->|No| G[Step 3: Reference Existing ADRs]
+    F --> H[Step 4: Draft design.md from Template]
+    G --> H
+    H --> I[Step 5: Request Human Gate 2 Approval]
 ```
 
 ### Step 1: Discover Active ADRs

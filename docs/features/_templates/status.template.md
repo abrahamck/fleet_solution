@@ -13,6 +13,7 @@
 - [ ] `INTAKE` (Problem statement defined, complexity classified)
 - [ ] `DISCOVERY` (`requirements.md` drafted)
 - [ ] `REQUIREMENTS_REVIEW` (Human Gate 1 - Awaiting user sign-off)
+- [ ] `UX_DESIGN` (`ux-engineer` skill — screen spec / component design; **skip if no UI surface**)
 - [ ] `ARCHITECTURE_REVIEW` (`design.md` drafted, ADRs checked / created, Human Gate 2 sign-off)
 - [ ] `PLANNING` (`implementation-plan.md` drafted, DoR validated)
 - [ ] `TEST_DESIGN` (`test-plan.md` drafted independently)
