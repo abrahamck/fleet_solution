@@ -320,12 +320,21 @@ public class VehiclesController : ControllerBase
             vehicle.Type = request.Type?.Trim();
             vehicle.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
 
-            // Sync contact assignments
+            // Sync contact assignments (Diff-based sync — TD-001, INV-007)
             var existingAssignments = await _dbContext.VehicleContacts
                 .Where(vc => vc.VehicleId == id)
                 .ToListAsync();
-            foreach (var ea in existingAssignments) _dbContext.VehicleContacts.Remove(ea);
 
+            var requestedContactIds = request.AssignedContacts.Select(ca => ca.ContactId).ToHashSet();
+
+            // 1. Soft-delete removed assignments
+            var toRemove = existingAssignments.Where(ea => !requestedContactIds.Contains(ea.ContactId)).ToList();
+            foreach (var ea in toRemove)
+            {
+                _dbContext.VehicleContacts.Remove(ea);
+            }
+
+            // 2. Retain existing or insert new assignments
             bool hasSetPrimary = false;
             foreach (var ca in request.AssignedContacts)
             {
@@ -335,14 +344,24 @@ public class VehiclesController : ControllerBase
                     isPrimary = true;
                     hasSetPrimary = true;
                 }
-                _dbContext.VehicleContacts.Add(new VehicleContact
+
+                var existing = existingAssignments.FirstOrDefault(ea => ea.ContactId == ca.ContactId);
+                if (existing != null)
                 {
-                    VehicleId = id,
-                    ContactId = ca.ContactId,
-                    AssociationRole = ca.AssociationRole,
-                    IsPrimary = isPrimary,
-                    AssignedDate = DateTime.UtcNow
-                });
+                    existing.AssociationRole = ca.AssociationRole;
+                    existing.IsPrimary = isPrimary;
+                }
+                else
+                {
+                    _dbContext.VehicleContacts.Add(new VehicleContact
+                    {
+                        VehicleId = id,
+                        ContactId = ca.ContactId,
+                        AssociationRole = ca.AssociationRole,
+                        IsPrimary = isPrimary,
+                        AssignedDate = DateTime.UtcNow
+                    });
+                }
             }
 
             // Sync vehicle contact addresses

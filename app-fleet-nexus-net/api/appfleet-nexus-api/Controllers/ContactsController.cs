@@ -458,12 +458,22 @@ public class ContactsController : ControllerBase
                 }
             }
 
-            // Sync vehicle assignments
+            // Sync vehicle assignments (Diff-based sync — TD-002, INV-007)
             var existingAssignments = await _db.VehicleContacts
-                .Where(vc => vc.ContactId == id)
-                .ToListAsync();
-            foreach (var ea in existingAssignments) _db.VehicleContacts.Remove(ea);
+                 .Where(vc => vc.ContactId == id)
+                 .ToListAsync();
 
+            var requestedVehicleIds = request.VehicleAssignments?.Select(va => va.VehicleId).ToHashSet()
+                                      ?? new HashSet<Guid>();
+
+            // 1. Soft-delete removed assignments
+            var toRemove = existingAssignments.Where(ea => !requestedVehicleIds.Contains(ea.VehicleId)).ToList();
+            foreach (var ea in toRemove)
+            {
+                _db.VehicleContacts.Remove(ea);
+            }
+
+            // 2. Retain existing or insert new assignments
             if (request.VehicleAssignments != null)
             {
                 foreach (var va in request.VehicleAssignments)
@@ -472,14 +482,23 @@ public class ContactsController : ControllerBase
                     if (!vehicleExists)
                         return BadRequest(new { message = $"Vehicle {va.VehicleId} not found or not accessible." });
 
-                    _db.VehicleContacts.Add(new VehicleContact
+                    var existing = existingAssignments.FirstOrDefault(ea => ea.VehicleId == va.VehicleId);
+                    if (existing != null)
                     {
-                        VehicleId = va.VehicleId,
-                        ContactId = id,
-                        AssociationRole = va.AssociationRole,
-                        IsPrimary = va.IsPrimary,
-                        AssignedDate = DateTime.UtcNow
-                    });
+                        existing.AssociationRole = va.AssociationRole;
+                        existing.IsPrimary = va.IsPrimary;
+                    }
+                    else
+                    {
+                        _db.VehicleContacts.Add(new VehicleContact
+                        {
+                            VehicleId = va.VehicleId,
+                            ContactId = id,
+                            AssociationRole = va.AssociationRole,
+                            IsPrimary = va.IsPrimary,
+                            AssignedDate = DateTime.UtcNow
+                        });
+                    }
                 }
             }
 
