@@ -512,4 +512,75 @@ public class ContactsControllerTests : IDisposable
             Assert.Single(contacts!.Cast<object>().ToList());
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // FEATURE-002 TEST-015: Diff-based sync preserves VehicleContact.AssignedDate (INV-007)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateContact_DiffSync_PreservesVehicleAssignedDate()
+    {
+        var tenantId = Guid.NewGuid();
+        await SeedTenantAsync(tenantId, "Tenant A");
+        _tenantAccessor.CurrentTenantId = tenantId;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
+
+        Guid contactId;
+        Guid vehicleId;
+        var tenDaysAgo = DateTime.UtcNow.AddDays(-10);
+
+        using (var ctx = CreateContext())
+        {
+            var vehicle = new Vehicle { UnitNumber = "V-DIFF-C", Status = "Active" };
+            ctx.Vehicles.Add(vehicle);
+            var contact = new Contact { FirstName = "Driver", LastName = "Diff", ContactType = "Driver", Status = "Active" };
+            ctx.Contacts.Add(contact);
+            await ctx.SaveChangesAsync();
+
+            vehicleId = vehicle.Id;
+            contactId = contact.Id;
+
+            var assignment = new VehicleContact
+            {
+                VehicleId = vehicleId,
+                ContactId = contactId,
+                AssociationRole = "Driver",
+                IsPrimary = true,
+                AssignedDate = tenDaysAgo
+            };
+            ctx.VehicleContacts.Add(assignment);
+            await ctx.SaveChangesAsync();
+        }
+
+        using (var ctx = CreateContext())
+        {
+            var controller = CreateController(ctx);
+            var request = ValidContactRequest("Driver", "DiffUpdated");
+            request.VehicleAssignments = new List<VehicleContactAssignmentDto>
+            {
+                new VehicleContactAssignmentDto
+                {
+                    VehicleId = vehicleId,
+                    ContactId = contactId,
+                    AssociationRole = "Driver",
+                    IsPrimary = true
+                }
+            };
+
+            var result = await controller.UpdateContact(contactId, request);
+            Assert.IsType<OkObjectResult>(result);
+        }
+
+        using (var ctx = CreateContext())
+        {
+            var assignment = await ctx.VehicleContacts
+                .FirstOrDefaultAsync(vc => vc.VehicleId == vehicleId && vc.ContactId == contactId);
+
+            Assert.NotNull(assignment);
+            Assert.False(assignment!.IsDeleted);
+            // Verify AssignedDate was NOT overwritten to UtcNow
+            Assert.True((assignment.AssignedDate - tenDaysAgo).Duration() < TimeSpan.FromSeconds(5),
+                $"AssignedDate was expected to be preserved near {tenDaysAgo}, but was {assignment.AssignedDate}");
+        }
+    }
 }

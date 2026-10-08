@@ -1,7 +1,7 @@
 # TASK-006: Integration Test Suite Execution & Evidence Logging
 
 > **Feature**: `FEATURE-002` ([requirements.md](../requirements.md))  
-> **Status**: `DEFERRED` (Deferred to Phase 2; Phase 1 API/Data verified via existing test suites)  
+> **Status**: `VERIFIED`  
 > **Order**: 006  
 > **Dependencies**: TASK-001 through TASK-005  
 
@@ -50,7 +50,7 @@ Implement the automated test cases specified in `test-plan.md` across `VehiclesC
 ---
 
 ## 6. Definition of Done (DoD) Checklist
-- [ ] All specified test methods implemented in test fixtures.
-- [ ] 100% of test suite passing.
-- [ ] `evidence.md` updated with exact terminal execution output and status `VERIFIED`.
-- [ ] Task status updated to `VERIFIED`.
+- [x] All specified test methods implemented in test fixtures.
+- [x] 100% of test suite passing.
+- [x] `evidence.md` updated with exact terminal execution output and status `VERIFIED`.
+- [x] Task status updated to `VERIFIED`.
