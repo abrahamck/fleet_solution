@@ -101,13 +101,12 @@ a11y_notes: >-
   Step nodes are clickable list items — should implement role="tab" + aria-selected
   per APG Tabs pattern for full keyboard compliance (open audit finding).
   Close button has aria-label="Close". Focus trap not explicitly implemented —
-  open finding.
   ADR-018 compliance: wizard pattern matches ADR-018 intent but step content is
   inlined (all 5 steps in one file) rather than per-step child components.
   Reported as M4-001 (P2 technical debt).
 status: active
 deprecation_reason: ~
-verified_commit: working-tree
+verified_commit: 9ee3751
 ```
 
 ---
@@ -150,7 +149,7 @@ a11y_notes: >-
   aria-live or role="alert" on the error summary.
 status: active
 deprecation_reason: ~
-verified_commit: working-tree
+verified_commit: 9ee3751
 ```
 
 ---
@@ -187,7 +186,7 @@ a11y_notes: >-
   with descriptive labels.
 status: active
 deprecation_reason: ~
-verified_commit: working-tree
+verified_commit: 3a35ffd
 ```
 
 ---
