@@ -1,7 +1,7 @@
 # TASK-005: Blazor UI Inline Entity Creation & Recursion Guards
 
 > **Feature**: `FEATURE-002` ([requirements.md](../requirements.md))  
-> **Status**: `DEFERRED` (Deferred to Phase 2 UI Release)  
+> **Status**: `VERIFIED`  
 > **Order**: 005  
 > **Dependencies**: TASK-004  
 
@@ -45,9 +45,9 @@ Enhance both `VehicleDialog.razor` and `ContactDialog.razor` to support seamless
 ---
 
 ## 6. Definition of Done (DoD) Checklist
-- [ ] `IsInlineMode` parameter added and respected in both dialog components.
-- [ ] "+ Add New Driver / Contact" button functional in `VehicleDialog.razor`.
-- [ ] "+ Add New Vehicle" button functional in Step 5 of `ContactDialog.razor`.
-- [ ] Parent draft state preserved across cancellations and completions.
-- [ ] UI project builds cleanly without warnings or errors.
-- [ ] Task status updated to `VERIFIED`.
+- [x] `IsInlineMode` parameter added and respected in both dialog components.
+- [x] "+ Add New Driver / Contact" button functional in `VehicleDialog.razor`.
+- [x] "+ Add New Vehicle" button functional in Step 5 of `ContactDialog.razor`.
+- [x] Parent draft state preserved across cancellations and completions.
+- [x] UI project builds cleanly without warnings or errors.
+- [x] Task status updated to `VERIFIED`.

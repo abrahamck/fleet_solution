@@ -71,8 +71,8 @@ path: app-fleet-nexus-net/ui/appfleet-nexus-ui/Components/ContactDialog.razor
 kind: orchestrator
 purpose: >-
   5-step wizard dialog for creating and editing a contact (person) record:
-  Identity, Phones, Address & Email, Compliance, Review. Manages step state,
-  per-step validation, and submission. Domain: contact directory.
+  Identity, Phones, Address & Email, Compliance, Vehicle Assignments, Review. Manages step state,
+  per-step validation, submission, and inline vehicle creation (INV-006 recursion guard).
 data_fields:
   - Contact: ContactModel — the contact entity being created or edited
   - IsEditMode: bool — true = editing existing, false = adding new
@@ -84,6 +84,8 @@ props:
   - IsEditMode: bool [Parameter] — edit vs create mode (default: false)
   - IsVisible: bool [Parameter] — show/hide (default: false)
   - IsSubmitting: bool [Parameter] — disables form while submitting (default: false)
+  - IsInlineMode: bool [Parameter] — suppresses nested entity creation when inline (default: false)
+  - AvailableVehicles: List<VehicleDto> [Parameter] — vehicle list for Step 5 assignment (default: empty)
   - ErrorMessage: string? [Parameter] — server-side error display (default: null)
   - OnSave: EventCallback<ContactModel> [Parameter] — fires on valid submit
   - OnCancel: EventCallback [Parameter] — fires on cancel/close
@@ -105,7 +107,7 @@ a11y_notes: >-
   Reported as M4-001 (P2 technical debt).
 status: active
 deprecation_reason: ~
-verified_commit: b0056c6
+verified_commit: working-tree
 ```
 
 ---
@@ -119,7 +121,7 @@ kind: orchestrator
 purpose: >-
   Single-page form dialog for creating and editing a vehicle record:
   specifications (unit number, type, status, make, model, year, VIN, license
-  plate, state), driver assignment, and garage location. Domain: vehicle fleet.
+  plate, state), driver assignment, garage location, and inline contact creation (INV-006 recursion guard).
 data_fields:
   - Vehicle: VehicleModel — the vehicle entity being created or edited
   - IsVisible: bool — controls dialog visibility
@@ -129,6 +131,8 @@ props:
   - Vehicle: VehicleModel [Parameter] (default: new VehicleModel)
   - IsVisible: bool [Parameter] (default: false)
   - IsSubmitting: bool [Parameter] (default: false)
+  - IsInlineMode: bool [Parameter] — suppresses nested entity creation when inline (default: false)
+  - AvailableContacts: List<ContactSummaryDto> [Parameter] (default: empty list)
   - ErrorMessage: string? [Parameter] (default: null)
   - OnSave: EventCallback<VehicleModel> [Parameter]
   - OnCancel: EventCallback [Parameter]
@@ -146,7 +150,7 @@ a11y_notes: >-
   aria-live or role="alert" on the error summary.
 status: active
 deprecation_reason: ~
-verified_commit: b0056c6
+verified_commit: working-tree
 ```
 
 ---
