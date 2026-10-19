@@ -5,8 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <!-- Increase WASM heap to prevent GC allocation failures in production -->
-    <EmccMaximumHeapSize>536870912</EmccMaximumHeapSize>
   </PropertyGroup>
 
   <ItemGroup>

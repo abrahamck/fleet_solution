@@ -5,24 +5,6 @@
 
 ---
 
-## 0. `EmccMaximumHeapSize` requires `wasm-tools` — add `dotnet workload restore` to the Dockerfile
-
-**Rule:** Setting `EmccMaximumHeapSize` (or any WASM AOT/size property) activates
-the `wasm-tools` workload. The `mcr.microsoft.com/dotnet/sdk` image does **not**
-ship with workloads pre-installed, so CI will fail at `dotnet restore` with
-`NETSDK1147`. Add `dotnet workload restore` as a dedicated layer **before**
-`dotnet restore`.
-
-**One-liner:** _Any time you add a WASM-specific csproj property, also add `RUN dotnet workload restore <csproj>` before `RUN dotnet restore` in the Dockerfile — the SDK Docker image never includes workloads by default._
-
-```dockerfile
-COPY ["appfleet-nexus-ui/appfleet-nexus-ui.csproj", "appfleet-nexus-ui/"]
-RUN dotnet workload restore "appfleet-nexus-ui/appfleet-nexus-ui.csproj"
-RUN dotnet restore "appfleet-nexus-ui/appfleet-nexus-ui.csproj"
-```
-
----
-
 ## 1. Always implement `IDisposable` on components that hold state
 
 **Rule:** Any Razor component that stores a `List<T>`, subscribes to events, or
@@ -69,20 +51,15 @@ private void RefreshFilteredVehicles()
 
 ---
 
-## 3. Set `EmccMaximumHeapSize` for any production WASM project
+## 3. Avoid setting `Emcc*` or native build flags unless AOT is explicitly required
 
-**Rule:** The default Blazor WASM heap is too small for real-world data loads.
-Every `.csproj` using `Microsoft.NET.Sdk.BlazorWebAssembly` **must** declare an
-explicit heap ceiling before the app ships to production.
+**Rule:** In modern .NET (8, 9, 10), Blazor WebAssembly dynamically grows memory
+at runtime up to the browser limit. Setting `EmccMaximumHeapSize` or other native
+compiler flags triggers `WasmBuildNative`, requiring the `wasm-tools` workload and
+Python 3 in the build environment, which causes CI/CD container build failures and
+exponentially slower compile times. Rely on the default runtime pack.
 
-**One-liner:** _The default WASM heap will OOM-crash in prod with real data — always set `EmccMaximumHeapSize` to at least 256 MB (268435456) in the csproj._
-
-```xml
-<PropertyGroup>
-  <!-- Prevents GC allocation failures under real data load -->
-  <EmccMaximumHeapSize>536870912</EmccMaximumHeapSize>
-</PropertyGroup>
-```
+**One-liner:** _Do not set `Emcc*` properties in Blazor WASM csproj files — the default runtime dynamically expands memory, and custom Emscripten flags force unnecessary native re-linking and break CI builds._
 
 ---
 
