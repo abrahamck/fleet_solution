@@ -834,4 +834,88 @@ public class VehiclesControllerTests : IDisposable
 
         await Assert.ThrowsAsync<DbUpdateException>(() => ctx.SaveChangesAsync());
     }
+
+    [Fact]
+    public async Task CreateVehicle_WithAssignedContactAndGarageAddress_NullVehicleUnitNumber_Succeeds()
+    {
+        // Arrange: Recreate the user payload scenario with assigned contact having null VehicleUnitNumber and garage address
+        var tenantId = Guid.NewGuid();
+        await SeedTenantAsync(tenantId, "Test Tenant");
+        _tenantAccessor.CurrentTenantId = tenantId;
+        _tenantAccessor.CurrentUserId = Guid.NewGuid();
+
+        Guid contactId;
+        using (var ctx = CreateContext())
+        {
+            var contact = new Contact { FirstName = "Ninette", LastName = "Abraham", ContactType = "Driver", Status = "Active" };
+            ctx.Contacts.Add(contact);
+            await ctx.SaveChangesAsync();
+            contactId = contact.Id;
+        }
+
+        using (var context = CreateContext())
+        {
+            var controller = new VehiclesController(context, _tenantAccessor, _cache, NullLogger<VehiclesController>.Instance);
+            var request = new VehicleUpsertRequest
+            {
+                UnitNumber = "A102",
+                Vin = "Vin121342",
+                Make = "Ford",
+                Model = "Escape S",
+                Year = 2016,
+                LicensePlate = "AC9623",
+                LicenseState = "IL",
+                Type = "SUV",
+                Status = "Active",
+                AssignedContacts = new List<VehicleContactAssignmentDto>
+                {
+                    new VehicleContactAssignmentDto
+                    {
+                        VehicleId = Guid.Empty,
+                        VehicleUnitNumber = null,
+                        ContactId = contactId,
+                        ContactFullName = "Ninette Abraham",
+                        AssociationRole = "Driver",
+                        IsPrimary = true,
+                        AssignedDate = DateTime.UtcNow
+                    }
+                },
+                ContactAddresses = new List<ContactAddressDto>
+                {
+                    new ContactAddressDto
+                    {
+                        Label = "Garage",
+                        IsPrimary = true,
+                        AddressLine1 = "889 Providence Ln",
+                        City = "BUFFALO GROVE",
+                        State = "IL",
+                        PostalCode = "60089",
+                        Country = "USA"
+                    }
+                }
+            };
+
+            // Act
+            var result = await controller.CreateVehicle(request);
+
+            // Assert
+            var created = Assert.IsType<CreatedAtActionResult>(result);
+            Assert.NotNull(created.Value);
+        }
+
+        // Verify database state
+        using (var verifyCtx = CreateContext())
+        {
+            var vehicle = await verifyCtx.Vehicles.FirstOrDefaultAsync(v => v.UnitNumber == "A102");
+            Assert.NotNull(vehicle);
+            var assignment = await verifyCtx.VehicleContacts.FirstOrDefaultAsync(vc => vc.VehicleId == vehicle.Id);
+            Assert.NotNull(assignment);
+            Assert.Equal(contactId, assignment.ContactId);
+            var address = await verifyCtx.ContactAddresses.FirstOrDefaultAsync(a => a.OwnerId == vehicle.Id && a.OwnerType == "Vehicle");
+            Assert.NotNull(address);
+            Assert.Equal("IL", address.State);
+            Assert.Equal("889 Providence Ln", address.AddressLine1);
+        }
+    }
 }
+
