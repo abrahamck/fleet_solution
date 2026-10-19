@@ -485,12 +485,15 @@
     }
 }
 
-<!-- Inline Child Contact Dialog (INV-006: recursion prevented via IsInlineMode=true) -->
-<ContactDialog IsVisible="_showInlineContactModal"
-               Contact="_inlineContactRequest"
-               IsEditMode="false"
-               IsInlineMode="true"
-               IsSubmitting="_isSavingInlineContact"
-               ErrorMessage="@_inlineContactError"
-               OnSave="HandleInlineContactSaved"
-               OnCancel="CloseInlineContactDialog" />
+<!-- Inline Child Contact Dialog (INV-006: recursion prevented via IsInlineMode=true and conditional render) -->
+@if (!IsInlineMode && _showInlineContactModal)
+{
+    <ContactDialog IsVisible="_showInlineContactModal"
+                   Contact="_inlineContactRequest"
+                   IsEditMode="false"
+                   IsInlineMode="true"
+                   IsSubmitting="_isSavingInlineContact"
+                   ErrorMessage="@_inlineContactError"
+                   OnSave="HandleInlineContactSaved"
+                   OnCancel="CloseInlineContactDialog" />
+}
