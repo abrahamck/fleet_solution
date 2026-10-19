@@ -170,9 +170,9 @@ public class VehicleContactAssignmentDto
 {
     public Guid Id { get; set; }
     public Guid VehicleId { get; set; }
-    public string VehicleUnitNumber { get; set; } = string.Empty;
+    public string? VehicleUnitNumber { get; set; }
     public Guid ContactId { get; set; }
-    public string ContactFullName { get; set; } = string.Empty;
+    public string? ContactFullName { get; set; }
 
     /// <summary>Driver | ResponsibleContact</summary>
     public string AssociationRole { get; set; } = "Driver";
