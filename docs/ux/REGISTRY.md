@@ -71,8 +71,8 @@ path: app-fleet-nexus-net/ui/appfleet-nexus-ui/Components/ContactDialog.razor
 kind: orchestrator
 purpose: >-
   5-step wizard dialog for creating and editing a contact (person) record:
-  Identity, Phones, Address & Email, Compliance, Review. Manages step state,
-  per-step validation, and submission. Domain: contact directory.
+  Identity, Phones, Address & Email, Compliance, Vehicle Assignments, Review. Manages step state,
+  per-step validation, submission, and inline vehicle creation (INV-006 recursion guard).
 data_fields:
   - Contact: ContactModel — the contact entity being created or edited
   - IsEditMode: bool — true = editing existing, false = adding new
@@ -84,6 +84,8 @@ props:
   - IsEditMode: bool [Parameter] — edit vs create mode (default: false)
   - IsVisible: bool [Parameter] — show/hide (default: false)
   - IsSubmitting: bool [Parameter] — disables form while submitting (default: false)
+  - IsInlineMode: bool [Parameter] — suppresses nested entity creation when inline (default: false)
+  - AvailableVehicles: List<VehicleDto> [Parameter] — vehicle list for Step 5 assignment (default: empty)
   - ErrorMessage: string? [Parameter] — server-side error display (default: null)
   - OnSave: EventCallback<ContactModel> [Parameter] — fires on valid submit
   - OnCancel: EventCallback [Parameter] — fires on cancel/close
@@ -99,13 +101,12 @@ a11y_notes: >-
   Step nodes are clickable list items — should implement role="tab" + aria-selected
   per APG Tabs pattern for full keyboard compliance (open audit finding).
   Close button has aria-label="Close". Focus trap not explicitly implemented —
-  open finding.
   ADR-018 compliance: wizard pattern matches ADR-018 intent but step content is
   inlined (all 5 steps in one file) rather than per-step child components.
   Reported as M4-001 (P2 technical debt).
 status: active
 deprecation_reason: ~
-verified_commit: b0056c6
+verified_commit: 9ee3751
 ```
 
 ---
@@ -119,7 +120,7 @@ kind: orchestrator
 purpose: >-
   Single-page form dialog for creating and editing a vehicle record:
   specifications (unit number, type, status, make, model, year, VIN, license
-  plate, state), driver assignment, and garage location. Domain: vehicle fleet.
+  plate, state), driver assignment, garage location, and inline contact creation (INV-006 recursion guard).
 data_fields:
   - Vehicle: VehicleModel — the vehicle entity being created or edited
   - IsVisible: bool — controls dialog visibility
@@ -129,6 +130,8 @@ props:
   - Vehicle: VehicleModel [Parameter] (default: new VehicleModel)
   - IsVisible: bool [Parameter] (default: false)
   - IsSubmitting: bool [Parameter] (default: false)
+  - IsInlineMode: bool [Parameter] — suppresses nested entity creation when inline (default: false)
+  - AvailableContacts: List<ContactSummaryDto> [Parameter] (default: empty list)
   - ErrorMessage: string? [Parameter] (default: null)
   - OnSave: EventCallback<VehicleModel> [Parameter]
   - OnCancel: EventCallback [Parameter]
@@ -146,7 +149,44 @@ a11y_notes: >-
   aria-live or role="alert" on the error summary.
 status: active
 deprecation_reason: ~
-verified_commit: b0056c6
+verified_commit: 9ee3751
+```
+
+---
+
+### ReassignModal
+
+```yaml
+name: ReassignModal
+path: app-fleet-nexus-net/ui/appfleet-nexus-ui/Components/ReassignModal.razor
+kind: orchestrator
+purpose: >-
+  Quick reassignment dialog for a vehicle: displays current active primary and
+  secondary contacts, mode selector (Replace Primary vs. Add Co-Driver),
+  contact picker with CDL compliance indicator badges (INV-009), and submits to
+  the dedicated POST /api/vehicles/{id}/reassign endpoint.
+data_fields:
+  - Vehicle: VehicleDto? — the vehicle whose assignments are being modified
+  - IsVisible: bool — controls dialog visibility
+props:
+  - IsVisible: bool [Parameter] (default: false)
+  - Vehicle: VehicleDto? [Parameter] (default: null)
+  - AvailableContacts: List<ContactSummaryDto> [Parameter] (default: empty list)
+  - OnSaved: EventCallback [Parameter] — fires after successful reassignment
+  - OnCancel: EventCallback [Parameter] — fires on modal cancel/close
+slots: []
+variants: []
+states:
+  - default
+  - submitting (inputs disabled, spinner displayed)
+  - error (top-level alert)
+a11y_notes: >-
+  Dialog uses role="dialog", aria-modal="true", and aria-labelledby. Close button
+  has aria-label="Close". Radio cards for mode selection use native radio buttons
+  with descriptive labels.
+status: active
+deprecation_reason: ~
+verified_commit: 3a35ffd
 ```
 
 ---

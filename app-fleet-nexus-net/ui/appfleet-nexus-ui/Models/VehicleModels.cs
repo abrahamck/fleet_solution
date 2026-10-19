@@ -36,3 +36,14 @@ public class VehicleDto
     public List<ContactAddressDto> ContactAddresses { get; set; } = new();
     public List<ContactPhoneDto> ContactPhones { get; set; } = new();
 }
+
+public class ReassignVehicleModel
+{
+    [Required(ErrorMessage = "Please select a contact.")]
+    public Guid? NewContactId { get; set; }
+
+    public string AssociationRole { get; set; } = "Driver";
+
+    [Required]
+    public string ReassignMode { get; set; } = "ReplacePrimary";
+}

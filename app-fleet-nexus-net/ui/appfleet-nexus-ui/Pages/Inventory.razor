@@ -178,6 +178,9 @@
                                             </span>
                                         </td>
                                         <td class="text-end">
+                                            <button class="btn-icon text-secondary me-2" @onclick="() => OpenReassignModal(vehicle)" title="Reassign Driver">
+                                                <i class="bi bi-arrow-left-right"></i>
+                                            </button>
                                             <button class="btn-icon text-primary me-2" @onclick="() => EditVehicle(vehicle)" title="Edit Vehicle">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
@@ -220,6 +223,9 @@
                                     </div>
                                 }
                                 <div class="d-flex justify-content-end gap-2 border-top pt-2">
+                                    <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" @onclick="() => OpenReassignModal(vehicle)">
+                                        <i class="bi bi-arrow-left-right"></i> Reassign
+                                    </button>
                                     <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" @onclick="() => EditVehicle(vehicle)">
                                         <i class="bi bi-pencil-fill"></i> Edit
                                     </button>
@@ -509,6 +515,13 @@
                OnSave="HandleSaveContact"
                OnCancel="CloseContactModal" />
 
+<!-- Reassign Modal Component (FEATURE-002) -->
+<ReassignModal IsVisible="_showReassignModal"
+               Vehicle="_reassignVehicle"
+               AvailableContacts="_contacts"
+               OnSaved="HandleReassignSaved"
+               OnCancel="CloseReassignModal" />
+
 @code {
     private string _activeTab = "vehicles";
     private bool _isLoadingVehicles = true;
@@ -516,6 +529,28 @@
     private List<VehicleDto> _vehicles = new();
     private List<ContactSummaryDto> _contacts = new();
     private ContactKpiDto? _contactKpis;
+
+    // Reassign Modal state (FEATURE-002)
+    private bool _showReassignModal = false;
+    private VehicleDto? _reassignVehicle;
+
+    private void OpenReassignModal(VehicleDto vehicle)
+    {
+        _reassignVehicle = vehicle;
+        _showReassignModal = true;
+    }
+
+    private void CloseReassignModal()
+    {
+        _showReassignModal = false;
+        _reassignVehicle = null;
+    }
+
+    private async Task HandleReassignSaved()
+    {
+        CloseReassignModal();
+        await LoadVehiclesAsync();
+    }
     
     // Vehicles Filters state
     private string _searchQuery = "";

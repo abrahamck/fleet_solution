@@ -1,0 +1,340 @@
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using System.Net.Http.Json
+@using System.Threading.Tasks
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using appfleet_nexus_ui.Models
+@inject HttpClient Http
+
+@if (IsVisible && Vehicle != null)
+{
+    <div class="modal-backdrop-fade show"></div>
+    <div class="modal-wrapper animate-fade-in" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="reassign-modal-title">
+        <div class="modal-dialog-custom modal-dialog-md" role="document">
+            <div class="modal-content-custom shadow-lg">
+                <!-- Header -->
+                <div class="modal-header-custom">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-header-icon-box me-3">
+                            <i class="bi bi-arrow-left-right text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title-custom mb-1" id="reassign-modal-title">
+                                Reassign Vehicle (Unit @Vehicle.UnitNumber)
+                            </h5>
+                            <p class="modal-subtitle-custom mb-0">Update primary driver assignment or add a co-driver / secondary contact.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close-custom" @onclick="HandleCancel" aria-label="Close" disabled="@_isSubmitting" title="Close dialog">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body-custom">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div>@_errorMessage</div>
+                        </div>
+                    }
+
+                    <!-- Current Assignments Summary -->
+                    <div class="card bg-light border-0 rounded-3 p-3 mb-4">
+                        <div class="text-uppercase small text-muted fw-bold mb-2">Current Active Assignments</div>
+                        @if (Vehicle.AssignedContacts?.Any() == true)
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var assignment in Vehicle.AssignedContacts)
+                                {
+                                    <div class="d-flex align-items-center justify-content-between bg-white p-2.5 rounded border">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                @GetInitials(assignment.ContactFullName ?? "Driver")
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold text-dark small">@(assignment.ContactFullName ?? "Assigned Contact")</div>
+                                                <div class="text-muted extra-small">@assignment.AssociationRole</div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            @if (assignment.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary px-2.5 py-1 small">Primary</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary px-2.5 py-1 small">Secondary</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted small fst-italic">No contacts currently assigned.</div>
+                        }
+                    </div>
+
+                    <!-- Reassign Mode Selector -->
+                    <div class="mb-4">
+                        <label class="form-label-custom fw-semibold mb-2">Reassignment Mode <span class="required-star">*</span></label>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <label class="card h-100 p-3 border cursor-pointer reassign-mode-card @(_model.ReassignMode == "ReplacePrimary" ? "border-primary bg-primary bg-opacity-10" : "")">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <input type="radio" name="reassignMode" class="form-check-input mt-1" 
+                                               checked="@(_model.ReassignMode == "ReplacePrimary")" 
+                                               @onchange='() => SetMode("ReplacePrimary")' 
+                                               disabled="@_isSubmitting" />
+                                        <div>
+                                            <div class="fw-bold small text-dark">Replace Primary</div>
+                                            <div class="text-muted extra-small mt-0.5">Unassigns the current primary driver and assigns the new contact as primary.</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="card h-100 p-3 border cursor-pointer reassign-mode-card @(_model.ReassignMode == "AddSecondary" ? "border-primary bg-primary bg-opacity-10" : "")">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <input type="radio" name="reassignMode" class="form-check-input mt-1" 
+                                               checked="@(_model.ReassignMode == "AddSecondary")" 
+                                               @onchange='() => SetMode("AddSecondary")' 
+                                               disabled="@_isSubmitting" />
+                                        <div>
+                                            <div class="fw-bold small text-dark">Add Secondary / Co-Driver</div>
+                                            <div class="text-muted extra-small mt-0.5">Retains current primary driver and adds the new contact as a secondary driver.</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Select New Contact -->
+                    <div class="mb-3">
+                        <label class="form-label-custom fw-semibold" for="reassign-contact-select">
+                            Select Contact <span class="required-star">*</span>
+                        </label>
+                        <select id="reassign-contact-select" class="form-select-custom w-100" 
+                                value="@(_model.NewContactId?.ToString() ?? "")" 
+                                @onchange="OnContactSelected" 
+                                disabled="@_isSubmitting">
+                            <option value="">-- Choose a contact --</option>
+                            @foreach (var contact in AvailableContacts)
+                            {
+                                <option value="@contact.Id">
+                                    @contact.FullName (@contact.ContactType) @(contact.Status != "Active" ? $"[{contact.Status}]" : "")
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Selected Contact Compliance Badge (INV-009) -->
+                    @if (_selectedContactDetail != null)
+                    {
+                        <div class="card p-3 mb-3 border rounded-3 bg-white">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div>
+                                    <div class="fw-semibold text-dark small">@_selectedContactDetail.FullName</div>
+                                    <div class="text-muted extra-small">
+                                        Type: @_selectedContactDetail.ContactType
+                                        @if (!string.IsNullOrEmpty(_selectedContactDetail.LicenseNumber))
+                                        {
+                                            <span> • CDL: @_selectedContactDetail.LicenseNumber (@(_selectedContactDetail.LicenseState ?? "N/A"))</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div>
+                                    @if (_selectedContactDetail.LicenseExpirationDate.HasValue)
+                                    {
+                                        var expDate = _selectedContactDetail.LicenseExpirationDate.Value;
+                                        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                                        if (expDate < today)
+                                        {
+                                            <span class="badge bg-danger d-inline-flex align-items-center gap-1" title="Driver CDL expired on @expDate">
+                                                <i class="bi bi-exclamation-triangle-fill"></i> CDL Expired (@expDate)
+                                            </span>
+                                        }
+                                        else if (expDate <= today.AddDays(30))
+                                        {
+                                            <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1" title="Driver CDL expires soon on @expDate">
+                                                <i class="bi bi-clock-history"></i> CDL Expires Soon (@expDate)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 d-inline-flex align-items-center gap-1">
+                                                <i class="bi bi-check-circle-fill"></i> CDL Valid
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border">No License On File</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Association Role -->
+                    <div class="mb-2">
+                        <label class="form-label-custom fw-semibold" for="reassign-role-select">Role</label>
+                        <select id="reassign-role-select" class="form-select-custom w-100" @bind="_model.AssociationRole" disabled="@_isSubmitting">
+                            <option value="Driver">Driver</option>
+                            <option value="ResponsibleContact">Responsible Contact</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer-custom d-flex justify-content-end gap-2 p-3 border-top">
+                    <button type="button" class="btn btn-outline-secondary px-4" @onclick="HandleCancel" disabled="@_isSubmitting">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary d-flex align-items-center gap-2 px-4 shadow-sm" @onclick="HandleSubmit" disabled="@(_isSubmitting || !_model.NewContactId.HasValue)">
+                        @if (_isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span>Reassigning...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-lg"></i>
+                            <span>Confirm Reassignment</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public VehicleDto? Vehicle { get; set; }
+    [Parameter] public List<ContactSummaryDto> AvailableContacts { get; set; } = new();
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private ReassignVehicleModel _model = new();
+    private ContactDetailDto? _selectedContactDetail;
+    private bool _isSubmitting = false;
+    private string? _errorMessage;
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            _model = new ReassignVehicleModel
+            {
+                ReassignMode = "ReplacePrimary",
+                AssociationRole = "Driver"
+            };
+            _selectedContactDetail = null;
+            _errorMessage = null;
+            _isSubmitting = false;
+        }
+    }
+
+    private void SetMode(string mode)
+    {
+        _model.ReassignMode = mode;
+    }
+
+    private async Task OnContactSelected(ChangeEventArgs e)
+    {
+        var rawVal = e.Value?.ToString();
+        if (Guid.TryParse(rawVal, out var contactId))
+        {
+            _model.NewContactId = contactId;
+            _errorMessage = null;
+
+            // Fetch contact detail for CDL expiration / compliance badge (INV-009)
+            try
+            {
+                _selectedContactDetail = await Http.GetFromJsonAsync<ContactDetailDto>($"api/contacts/{contactId}");
+            }
+            catch
+            {
+                _selectedContactDetail = null;
+            }
+        }
+        else
+        {
+            _model.NewContactId = null;
+            _selectedContactDetail = null;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Vehicle == null || !_model.NewContactId.HasValue)
+        {
+            _errorMessage = "Please select a contact to assign.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var payload = new
+            {
+                newContactId = _model.NewContactId.Value,
+                associationRole = _model.AssociationRole,
+                reassignMode = _model.ReassignMode
+            };
+
+            var response = await Http.PostAsJsonAsync($"api/vehicles/{Vehicle.Id}/reassign", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                await OnSaved.InvokeAsync();
+            }
+            else
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                string msg = "Failed to reassign vehicle.";
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(errorBody);
+                    if (doc.RootElement.TryGetProperty("message", out var msgProp))
+                    {
+                        msg = msgProp.GetString() ?? msg;
+                    }
+                }
+                catch { }
+
+                _errorMessage = msg;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        _errorMessage = null;
+        await OnCancel.InvokeAsync();
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "FL";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0].Substring(0, Math.Min(2, parts[0].Length)).ToUpperInvariant();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+}

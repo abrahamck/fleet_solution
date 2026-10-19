@@ -1,7 +1,7 @@
 # TASK-004: Blazor UI Quick Reassign Modal & Inventory Wiring
 
 > **Feature**: `FEATURE-002` ([requirements.md](../requirements.md))  
-> **Status**: `DEFERRED` (Deferred to Phase 2 UI Release; backend API endpoint ready in TASK-003)  
+> **Status**: `VERIFIED`  
 > **Order**: 004  
 > **Dependencies**: TASK-003  
 
@@ -44,9 +44,9 @@ Create the `ReassignModal.razor` Blazor component providing a dedicated quick re
 ---
 
 ## 6. Definition of Done (DoD) Checklist
-- [ ] `ReassignVehicleModel` defined.
-- [ ] `ReassignModal.razor` implemented and styled in accordance with existing modal design tokens.
-- [ ] "Reassign" button added to vehicle card and table views in `Inventory.razor`.
-- [ ] Successful reassignment closes modal and refreshes inventory data.
-- [ ] UI project builds with 0 errors.
-- [ ] Task status updated to `VERIFIED`.
+- [x] `ReassignVehicleModel` defined.
+- [x] `ReassignModal.razor` implemented and styled in accordance with existing modal design tokens.
+- [x] "Reassign" button added to vehicle card and table views in `Inventory.razor`.
+- [x] Successful reassignment closes modal and refreshes inventory data.
+- [x] UI project builds with 0 errors.
+- [x] Task status updated to `VERIFIED`.

@@ -1,5 +1,7 @@
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Net.Http.Json
 @using appfleet_nexus_ui.Models
+@inject HttpClient Http
 
 @if (IsVisible)
 {
@@ -120,8 +122,17 @@
 
                         <!-- Section 2: Contact Assignments (Invariant I-002) -->
                         <div class="mb-4 pt-3 border-top">
-                            <div class="section-header-title">
-                                <i class="bi bi-people-fill text-primary"></i> Contact Assignments <span class="required-star">*</span>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="section-header-title mb-0">
+                                    <i class="bi bi-people-fill text-primary"></i> Contact Assignments <span class="required-star">*</span>
+                                </div>
+                                @if (!IsInlineMode)
+                                {
+                                    <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 shadow-2xs" 
+                                            @onclick="OpenInlineContactDialog" disabled="@IsSubmitting" title="Create a new contact in the directory">
+                                        <i class="bi bi-person-plus-fill"></i> + Add New Driver / Contact
+                                    </button>
+                                }
                             </div>
                             <p class="section-header-desc">At least one contact must be assigned to this vehicle (Invariant I-002 / AC-011).</p>
 
@@ -260,12 +271,18 @@
 
 @code {
     [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public bool IsInlineMode { get; set; } = false;
     [Parameter] public VehicleDto Vehicle { get; set; } = new();
     [Parameter] public List<ContactSummaryDto> AvailableContacts { get; set; } = new();
     [Parameter] public bool IsSubmitting { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public EventCallback<VehicleDto> OnSave { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool _showInlineContactModal = false;
+    private ContactUpsertRequest _inlineContactRequest = new();
+    private bool _isSavingInlineContact = false;
+    private string? _inlineContactError;
 
     private string _selectedContactId = "";
     private string _selectedRole = "Driver";
@@ -399,4 +416,81 @@
         _localError = null;
         await OnCancel.InvokeAsync();
     }
+
+    private void OpenInlineContactDialog()
+    {
+        _inlineContactRequest = new ContactUpsertRequest
+        {
+            ContactType = "Driver",
+            Status = "Active"
+        };
+        _inlineContactError = null;
+        _showInlineContactModal = true;
+    }
+
+    private void CloseInlineContactDialog()
+    {
+        _showInlineContactModal = false;
+        _inlineContactError = null;
+    }
+
+    private async Task HandleInlineContactSaved(ContactUpsertRequest newContact)
+    {
+        _isSavingInlineContact = true;
+        _inlineContactError = null;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/contacts", newContact);
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<ContactDetailDto>();
+                if (created != null)
+                {
+                    var summary = new ContactSummaryDto
+                    {
+                        Id = created.Id,
+                        FullName = created.FullName,
+                        ContactType = created.ContactType,
+                        Status = created.Status
+                    };
+                    AvailableContacts.Add(summary);
+                    _selectedContactId = created.Id.ToString();
+                    _selectedRole = created.ContactType == "Driver" ? "Driver" : "ResponsibleContact";
+                    AddContactAssignment();
+                }
+                _showInlineContactModal = false;
+            }
+            else
+            {
+                var errBody = await response.Content.ReadAsStringAsync();
+                string msg = "Failed to save contact.";
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(errBody);
+                    if (doc.RootElement.TryGetProperty("message", out var msgProp))
+                        msg = msgProp.GetString() ?? msg;
+                }
+                catch { }
+                _inlineContactError = msg;
+            }
+        }
+        catch (Exception ex)
+        {
+            _inlineContactError = ex.Message;
+        }
+        finally
+        {
+            _isSavingInlineContact = false;
+        }
+    }
 }
+
+<!-- Inline Child Contact Dialog (INV-006: recursion prevented via IsInlineMode=true) -->
+<ContactDialog IsVisible="_showInlineContactModal"
+               Contact="_inlineContactRequest"
+               IsEditMode="false"
+               IsInlineMode="true"
+               IsSubmitting="_isSavingInlineContact"
+               ErrorMessage="@_inlineContactError"
+               OnSave="HandleInlineContactSaved"
+               OnCancel="CloseInlineContactDialog" />
