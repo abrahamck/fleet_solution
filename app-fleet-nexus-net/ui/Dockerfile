@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["appfleet-nexus-ui/appfleet-nexus-ui.csproj", "appfleet-nexus-ui/"]
+RUN dotnet workload restore "appfleet-nexus-ui/appfleet-nexus-ui.csproj"
 RUN dotnet restore "appfleet-nexus-ui/appfleet-nexus-ui.csproj"
 COPY . .
 WORKDIR "/src/appfleet-nexus-ui"

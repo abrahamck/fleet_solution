@@ -5,6 +5,24 @@
 
 ---
 
+## 0. `EmccMaximumHeapSize` requires `wasm-tools` — add `dotnet workload restore` to the Dockerfile
+
+**Rule:** Setting `EmccMaximumHeapSize` (or any WASM AOT/size property) activates
+the `wasm-tools` workload. The `mcr.microsoft.com/dotnet/sdk` image does **not**
+ship with workloads pre-installed, so CI will fail at `dotnet restore` with
+`NETSDK1147`. Add `dotnet workload restore` as a dedicated layer **before**
+`dotnet restore`.
+
+**One-liner:** _Any time you add a WASM-specific csproj property, also add `RUN dotnet workload restore <csproj>` before `RUN dotnet restore` in the Dockerfile — the SDK Docker image never includes workloads by default._
+
+```dockerfile
+COPY ["appfleet-nexus-ui/appfleet-nexus-ui.csproj", "appfleet-nexus-ui/"]
+RUN dotnet workload restore "appfleet-nexus-ui/appfleet-nexus-ui.csproj"
+RUN dotnet restore "appfleet-nexus-ui/appfleet-nexus-ui.csproj"
+```
+
+---
+
 ## 1. Always implement `IDisposable` on components that hold state
 
 **Rule:** Any Razor component that stores a `List<T>`, subscribes to events, or
