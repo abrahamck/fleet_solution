@@ -2,8 +2,8 @@
 
 > **Feature Reference**: [`requirements.md`](requirements.md)  
 > **Test Plan Reference**: [`test-plan.md`](test-plan.md)  
-> **Last Updated**: 2026-10-08  
-> **Overall Verification Status**: `VERIFIED` (All 6 Tasks Complete; 27/27 Automated Tests Passing; UI Compilation Succeeded)
+> **Last Updated**: 2026-10-18  
+> **Overall Verification Status**: `VERIFIED` (All 6 Tasks Complete; 28/28 Automated Tests Passing; UI Compilation Succeeded) — hotfix `BUG-001` is `SUPPORTED` pending review finding F-1 (see [`review.md`](review.md))
 
 ---
 
@@ -26,6 +26,7 @@
 | `AC-013` | `REQ-013` (Draft Form Preservation) | `VehicleDialog.razor`, `ContactDialog.razor` | `TEST-013` | `VERIFIED` | Parent state retained in local draft variables across inline cancellations; verified UI build |
 | `TD-001` | Tech Debt Fix (`AssignedDate` Preservation Vehicle) | `VehiclesController.cs:UpdateVehicle` | `TEST-014` | `VERIFIED` | Verified by `UpdateVehicle_DiffSync_PreservesAssignedDateForExistingAssignments` |
 | `TD-002` | Tech Debt Fix (`AssignedDate` Preservation Contact) | `ContactsController.cs:UpdateContact` | `TEST-015` | `VERIFIED` | Verified by `UpdateContact_DiffSync_PreservesVehicleAssignedDate` |
+| `BUG-001` | `AC-001` hotfix: Create Vehicle returned 400 when `VehicleUnitNumber` was null (NRT implicit `[Required]`) | `ContactDtos.cs:VehicleContactAssignmentDto`, `VehicleDialog.razor`, `Inventory.razor` | `CreateVehicle_WithAssignedContactAndGarageAddress_NullVehicleUnitNumber_Succeeds` | `SUPPORTED` | Test passes, but it calls the controller directly and skips model binding, so it doesn't prove the regression is fixed. A pipeline-level test is required to reach `VERIFIED` (review finding F-1). |
 
 ### Evidence Status Definitions:
 - `VERIFIED`: Automated test passed with reproducible command and output.
@@ -46,7 +47,8 @@ Result:
   Test run for c:\Learn\fleet_solution\app-fleet-nexus-net\api\appfleet-nexus-api.Tests\bin\Debug\net10.0\appfleet-nexus-api.Tests.dll (.NETCoreApp,Version=v10.0)
   A total of 1 test files matched the specified pattern.
 
-  Passed!  - Failed:     0, Passed:    27, Skipped:     0, Total:    27, Duration: 1 s - appfleet-nexus-api.Tests.dll (net10.0)
+  Passed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28, Duration: 1 s - appfleet-nexus-api.Tests.dll (net10.0)
+  (Re-run 2026-10-18 during structured review of BUG-001 hotfix)
 
 === UI Build Log ===
 Command: dotnet build c:\Learn\fleet_solution\app-fleet-nexus-net\ui\appfleet-nexus-ui\appfleet-nexus-ui.csproj
@@ -66,3 +68,5 @@ Result:
 | Deviation ID | Class | Description | Impact | Action / Decision |
 | :--- | :--- | :--- | :--- | :--- |
 | `DEV-001` | Class B | Phased delivery merged into single unified release covering all 6 tasks. | Full feature scope (Backend, UI, integration tests) is fully realized and verified without breaking changes. | Approved by User instruction. |
+| `DEV-002` | Class A | `VehicleContactAssignmentDto.VehicleUnitNumber` / `ContactFullName` made nullable so MVC no longer treats them as implicitly `[Required]` under NRT. | Display-only fields; the UI model already declares them `string?`. No contract break. | Auto-reconciled ([`review.md`](review.md)). |
+| `DEV-003` | Class B | `VehicleDialog` now sends an empty `ContactAddresses` list when Garage Address Line 1 is blank. On update, this deletes all vehicle addresses. | Users can now clear the garage address; addresses that aren't Garage would also be removed. | Reviewer acknowledgement required (review finding F-4). |

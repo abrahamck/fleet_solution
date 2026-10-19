@@ -34,7 +34,7 @@ flowchart LR
 | **2. Architecture & Design** | `APPROVED` | 2026-10-01 | Approved after critical review: dropped UnassignedDate, fixed delete-and-recreate tech debt, confirmed INV-005 exists. |
 | **3. Plan & Tasks** | `APPROVED` | 2026-10-02 | Implementation plan, independent test plan, initialized evidence matrix, and 6 task contracts approved by Human. |
 | **4. Task Breakdown & Execution** | `COMPLETE` | 2026-10-08 | All 6 tasks (Tasks 001–006) executed and VERIFIED. 27/27 automated integration tests passing; Blazor UI builds with 0 errors. |
-| **5. Review & Final Sign-Off** | `READY_FOR_FINAL_REVIEW` | — | All implementation and evidence verified; ready for final human sign-off and merge. |
+| **5. Review & Final Sign-Off** | `CHANGES_REQUESTED` | 2026-10-18 | BUG-001 hotfix (Create Vehicle 400 on null `VehicleUnitNumber`) reviewed: no Class C/D blockers. F-1 (pipeline-level regression test) must be fixed, and a decision on F-4 is needed, before final sign-off. See [review.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/review.md). |
 
 ---
 
@@ -45,6 +45,7 @@ flowchart LR
 - [implementation-plan.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/implementation-plan.md)
 - [test-plan.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/test-plan.md)
 - [evidence.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/evidence.md)
+- [review.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/review.md)
 - **Task Contracts**:
   - [001-data-layer-and-migrations.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/tasks/001-data-layer-and-migrations.md)
   - [002-api-diff-sync-tech-debt-fix.md](file:///c:/Learn/fleet_solution/docs/features/FEATURE-002-vehicle-person-assignment/tasks/002-api-diff-sync-tech-debt-fix.md)
