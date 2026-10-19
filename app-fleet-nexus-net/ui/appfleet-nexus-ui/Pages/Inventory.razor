@@ -498,29 +498,38 @@
 </div>
 
 <!-- Vehicle Add/Edit Dialog Component -->
-<VehicleDialog IsVisible="_showModal"
-               Vehicle="_activeModel"
-               AvailableContacts="_contacts"
-               IsSubmitting="_isSaving"
-               ErrorMessage="@_modalErrorMessage"
-               OnSave="HandleSaveVehicle"
-               OnCancel="CloseModal" />
+@if (_showModal)
+{
+    <VehicleDialog IsVisible="_showModal"
+                   Vehicle="_activeModel"
+                   AvailableContacts="_contacts"
+                   IsSubmitting="_isSaving"
+                   ErrorMessage="@_modalErrorMessage"
+                   OnSave="HandleSaveVehicle"
+                   OnCancel="CloseModal" />
+}
 
 <!-- Contact Add/Edit 5-Step Wizard Dialog Component -->
-<ContactDialog IsVisible="_showContactModal"
-               Contact="_activeContactRequest"
-               IsEditMode="_isEditingContact"
-               IsSubmitting="_isSavingContact"
-               ErrorMessage="@_contactModalErrorMessage"
-               OnSave="HandleSaveContact"
-               OnCancel="CloseContactModal" />
+@if (_showContactModal)
+{
+    <ContactDialog IsVisible="_showContactModal"
+                   Contact="_activeContactRequest"
+                   IsEditMode="_isEditingContact"
+                   IsSubmitting="_isSavingContact"
+                   ErrorMessage="@_contactModalErrorMessage"
+                   OnSave="HandleSaveContact"
+                   OnCancel="CloseContactModal" />
+}
 
 <!-- Reassign Modal Component (FEATURE-002) -->
-<ReassignModal IsVisible="_showReassignModal"
-               Vehicle="_reassignVehicle"
-               AvailableContacts="_contacts"
-               OnSaved="HandleReassignSaved"
-               OnCancel="CloseReassignModal" />
+@if (_showReassignModal)
+{
+    <ReassignModal IsVisible="_showReassignModal"
+                   Vehicle="_reassignVehicle"
+                   AvailableContacts="_contacts"
+                   OnSaved="HandleReassignSaved"
+                   OnCancel="CloseReassignModal" />
+}
 
 @code {
     private string _activeTab = "vehicles";
@@ -578,7 +587,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(LoadVehiclesAsync(), LoadContactsAsync());
+        await LoadVehiclesAsync();
+        await LoadContactsAsync();
     }
 
     private async Task SetActiveTab(string tab)
@@ -619,10 +629,11 @@
             var listTask = Http.GetFromJsonAsync<List<ContactSummaryDto>>("api/contacts");
             var kpiTask = Http.GetFromJsonAsync<ContactKpiDto>("api/contacts/summary");
 
-            await Task.WhenAll(listTask, kpiTask);
+            var list = await listTask;
+            var kpis = await kpiTask;
 
-            if (listTask.Result != null) _contacts = listTask.Result;
-            if (kpiTask.Result != null) _contactKpis = kpiTask.Result;
+            if (list != null) _contacts = list;
+            if (kpis != null) _contactKpis = kpis;
         }
         catch (Exception ex)
         {

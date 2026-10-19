@@ -17,6 +17,7 @@
 | ID | Title | Originating Feature | Deferred Requirement(s) | Rationale | Date Deferred | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `DEFER-001` | Multi-Vehicle Batch Assignment to a Driver/Contact | [FEATURE-002](features/FEATURE-002-vehicle-person-assignment/requirements.md) | UC-6, AC-011 (multi-assign subset) | Reduces initial release scope. Single-vehicle assignment via Reassign Modal and inline creation cover the core operational needs. Batch/multi-select assignment is an efficiency enhancement that can be layered on once the foundational assignment APIs and UI components are stable. | 2026-10-01 | `DEFERRED` |
+| `DEFER-002` | bUnit Component Testing & Headless Blazor UI Verification Suite | [FEATURE-002](features/FEATURE-002-vehicle-person-assignment/requirements.md) | Quality & Regression Prevention (Task 005 recursion blindspot) | Blazor UI verification currently relies exclusively on C# compilation (`dotnet build`), which passes on circular component declarations and runtime lifecycle bugs. Introducing bUnit component tests will allow automated rendering and lifecycle verification during `dotnet test` in future features. | 2026-10-18 | `DEFERRED` |
 
 ---
 

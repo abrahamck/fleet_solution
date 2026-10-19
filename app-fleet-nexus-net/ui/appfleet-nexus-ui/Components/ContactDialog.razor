@@ -983,11 +983,14 @@
     }
 }
 
-<!-- Inline Child Vehicle Dialog (INV-006: recursion prevented via IsInlineMode=true) -->
-<VehicleDialog IsVisible="_showInlineVehicleModal"
-               Vehicle="_inlineVehicle"
-               IsInlineMode="true"
-               IsSubmitting="_isSavingInlineVehicle"
-               ErrorMessage="@_inlineVehicleError"
-               OnSave="HandleInlineVehicleSaved"
-               OnCancel="CloseInlineVehicleDialog" />
+<!-- Inline Child Vehicle Dialog (INV-006: recursion prevented via IsInlineMode=true and conditional render) -->
+@if (!IsInlineMode && _showInlineVehicleModal)
+{
+    <VehicleDialog IsVisible="_showInlineVehicleModal"
+                   Vehicle="_inlineVehicle"
+                   IsInlineMode="true"
+                   IsSubmitting="_isSavingInlineVehicle"
+                   ErrorMessage="@_inlineVehicleError"
+                   OnSave="HandleInlineVehicleSaved"
+                   OnCancel="CloseInlineVehicleDialog" />
+}
